@@ -16,3 +16,7 @@ backend/src/main/resources/application-local.yml
 
 CLAUDE.md
 .claude/
+backend/src/main/python/__pycache__/
+backend/src/main/python/agents/__pycache__/
+backend/src/test/python/__pycache__/
+docs/superpowers/
