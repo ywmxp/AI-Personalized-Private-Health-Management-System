@@ -1,6 +1,5 @@
 import sys
 from pathlib import Path
-from unittest.mock import AsyncMock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "main" / "python"))
 
@@ -8,12 +7,18 @@ import pytest
 
 
 class MockAgentRun:
-    async def run(self, task):
-        result = AsyncMock()
-        msg = AsyncMock()
-        msg.content = self._mock_content
-        result.messages = [msg]
-        return result
+    async def run(self, task: str) -> str:
+        return self._mock_content
+
+    @staticmethod
+    def parse_response(raw: str) -> dict:
+        import json
+        text = raw.strip()
+        if text.startswith("```"):
+            lines = text.split("\n")
+            lines = [l for l in lines if not l.startswith("```")]
+            text = "\n".join(lines)
+        return json.loads(text)
 
 
 class MockProfileAgent(MockAgentRun):
