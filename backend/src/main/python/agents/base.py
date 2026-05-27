@@ -1,6 +1,7 @@
 import os
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 from autogen_agentchat.agents import AssistantAgent
+from autogen_core.models import ModelInfo
 from config import settings
 
 
@@ -9,6 +10,13 @@ def create_model_client() -> OpenAIChatCompletionClient:
         model=settings.AI_MODEL,
         api_key=settings.AI_API_KEY,
         base_url=settings.AI_API_BASE_URL,
+        model_info=ModelInfo(
+            vision=False,
+            function_calling=True,
+            json_output=True,
+            family="unknown",
+            structured_output=False,
+        ),
     )
 
 
