@@ -48,6 +48,7 @@
         <el-form-item>
           <el-button
             type="primary"
+            :loading="loading"
             @click="handleRegister"
             style="width: 100%; height: 40px; font-size: 16px"
           >
@@ -71,53 +72,66 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { FormInstance } from 'element-plus'
+import { register } from '../api/auth'
 
 const router = useRouter()
 const registerFormRef = ref<FormInstance>()
+const loading = ref(false)
 
 const registerForm = ref({
   phone: '',
   username: '',
   password: '',
-  confirmPassword: ''
+  confirmPassword: '',
 })
 
 const registerRules = {
   phone: [
     { required: true, message: '请输入手机号', trigger: 'blur' },
-    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号格式', trigger: 'blur' }
+    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号格式', trigger: 'blur' },
   ],
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 2, max: 20, message: '用户名长度在2-20个字符之间', trigger: 'blur' }
+    { min: 2, max: 20, message: '用户名长度在2-20个字符之间', trigger: 'blur' },
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, message: '密码长度不能少于6位', trigger: 'blur' }
+    { min: 6, message: '密码长度不能少于6位', trigger: 'blur' },
   ],
   confirmPassword: [
     { required: true, message: '请再次输入密码', trigger: 'blur' },
-    { 
-      validator: (_rule: any, value: any, callback: any) => {
+    {
+      validator: (_rule: unknown, value: string, callback: (err?: Error) => void) => {
         if (value !== registerForm.value.password) {
           callback(new Error('两次输入的密码不一致'))
         } else {
           callback()
         }
       },
-      trigger: 'blur'
-    }
-  ]
+      trigger: 'blur',
+    },
+  ],
 }
 
-const handleRegister = async () => {
+async function handleRegister() {
   if (!registerFormRef.value) return
-  await registerFormRef.value.validate(async (valid) => {
-    if (valid) {
-      ElMessage.success('注册成功！请登录')
-      router.push('/login')
-    }
-  })
+  const valid = await registerFormRef.value.validate().catch(() => false)
+  if (!valid) return
+
+  loading.value = true
+  try {
+    await register(
+      registerForm.value.phone,
+      registerForm.value.username,
+      registerForm.value.password,
+    )
+    ElMessage.success('注册成功，请登录')
+    router.push('/login')
+  } catch {
+    // 错误已在拦截器中处理
+  } finally {
+    loading.value = false
+  }
 }
 </script>
 
@@ -127,8 +141,7 @@ const handleRegister = async () => {
   justify-content: center;
   align-items: center;
   height: 100vh;
-  /* 注册页专有的淡雅灰色背景，与主页面彻底分离开 */
-  background-color: #f5f7fa; 
+  background-color: #f5f7fa;
 }
 
 .register-card {

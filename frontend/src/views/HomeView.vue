@@ -1,5 +1,5 @@
 <template>
-  <div class="shell">
+  <div>
     <header class="topbar">
       <div>
         <p class="eyebrow">AI Personalized Health Management System</p>
@@ -48,7 +48,3 @@
     </main>
   </div>
 </template>
-
-<style scoped>
-/* 这里什么都不加！完全保持原来项目自带的样式！ */
-</style>

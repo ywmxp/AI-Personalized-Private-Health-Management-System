@@ -30,6 +30,7 @@
         <el-form-item>
           <el-button
             type="primary"
+            :loading="loading"
             @click="handleLogin"
             style="width: 100%; height: 40px; font-size: 16px"
           >
@@ -51,46 +52,49 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElForm, ElMessage } from 'element-plus'
+import { ElMessage } from 'element-plus'
+import type { FormInstance } from 'element-plus'
+import { login } from '../api/auth'
+import { useUserStore } from '../stores/user'
 
-// 获取路由实例
 const router = useRouter()
+const userStore = useUserStore()
 
-// 表单引用
-const loginFormRef = ref<InstanceType<typeof ElForm>>()
+const loginFormRef = ref<FormInstance>()
+const loading = ref(false)
 
-// 表单数据
 const loginForm = ref({
   phone: '',
-  password: ''
+  password: '',
 })
 
-// 表单验证规则
-const loginRules = ref({
+const loginRules = {
   phone: [
     { required: true, message: '请输入手机号', trigger: 'blur' },
-    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号格式', trigger: 'blur' }
+    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号格式', trigger: 'blur' },
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, message: '密码长度不能少于6位', trigger: 'blur' }
-  ]
-})
+    { min: 6, message: '密码长度不能少于6位', trigger: 'blur' },
+  ],
+}
 
-// 登录方法
-const handleLogin = async () => {
+async function handleLogin() {
   if (!loginFormRef.value) return
+  const valid = await loginFormRef.value.validate().catch(() => false)
+  if (!valid) return
 
-  // 先执行表单验证
-  await loginFormRef.value.validate()
-
-  // 模拟登录成功（后面对接后端接口时替换这部分）
-  ElMessage.success('登录成功！')
-  // 保存token和用户名到本地存储
-  localStorage.setItem('token', 'mock-token-123456')
-  localStorage.setItem('username', loginForm.value.phone)
-  // 跳转到首页
-  router.push('/')
+  loading.value = true
+  try {
+    const res = await login(loginForm.value.phone, loginForm.value.password)
+    userStore.setLoginInfo(res.data.data!)
+    ElMessage.success('登录成功')
+    router.push('/home')
+  } catch {
+    // 错误已在拦截器中处理
+  } finally {
+    loading.value = false
+  }
 }
 </script>
 
