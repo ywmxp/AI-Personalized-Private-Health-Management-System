@@ -4,6 +4,7 @@
  */
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import type { User } from '../types'
 
 export const useUserStore = defineStore('user', () => {
   // 用户信息
@@ -19,9 +20,9 @@ export const useUserStore = defineStore('user', () => {
 
   /**
    * 设置登录信息
-   * @param {Object} data - 包含token和user的对象
+   * @param data - 包含token和user的对象
    */
-  function setLoginInfo(data) {
+  function setLoginInfo(data: { token: string; user: User }) {
     token.value = data.token
     userInfo.value = data.user
     localStorage.setItem('token', data.token)
