@@ -19,7 +19,7 @@ request.interceptors.request.use((config) => {
 request.interceptors.response.use(
   (response) => {
     const data = response.data as ApiResponse
-    if (data.code !== 200) {
+    if (data.code !== 0) {
       ElMessage.error(data.message || '请求失败')
       return Promise.reject(new Error(data.message))
     }
