@@ -124,6 +124,7 @@ async function handleRegister() {
       registerForm.value.phone,
       registerForm.value.username,
       registerForm.value.password,
+      registerForm.value.confirmPassword,
     )
     ElMessage.success('注册成功，请登录')
     router.push('/login')

@@ -13,11 +13,12 @@ export interface LoginRequest {
   password: string
 }
 
-/** 注册请求（confirmPassword 仅前端校验，不发送到后端） */
+/** 注册请求 */
 export interface RegisterRequest {
   phone: string
   username: string
   password: string
+  confirmPassword: string
 }
 
 /** 登录响应 */

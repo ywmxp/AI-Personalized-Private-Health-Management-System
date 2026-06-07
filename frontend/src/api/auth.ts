@@ -9,7 +9,7 @@ export async function login(phone: string, password: string) {
     await new Promise((r) => setTimeout(r, 300))
     return {
       data: {
-        code: 200,
+        code: 0,
         message: 'success',
         data: {
           token: 'mock-token-' + Date.now(),
@@ -27,16 +27,16 @@ export async function login(phone: string, password: string) {
 }
 
 /** 注册 —— 后端就绪后删掉 mock 分支即可，调用方零改动 */
-export async function register(phone: string, username: string, password: string) {
+export async function register(phone: string, username: string, password: string, confirmPassword: string) {
   if (MOCK_AUTH) {
     await new Promise((r) => setTimeout(r, 300))
     return {
       data: {
-        code: 200,
+        code: 0,
         message: '注册成功',
         data: null,
       } as ApiResponse<null>,
     }
   }
-  return request.post<ApiResponse<null>>('/api/auth/register', { phone, username, password })
+  return request.post<ApiResponse<null>>('/api/auth/register', { phone, username, password, confirmPassword })
 }
