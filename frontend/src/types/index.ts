@@ -1,3 +1,7 @@
 export type { User, LoginRequest, RegisterRequest, LoginResponse } from './user'
 export type { HealthRecord, HealthDataUpload } from './health'
 export type { ApiResponse } from './api'
+export type { AiProfileData, AiProfileRequest, AiPlanData, AiPlanRequest, AiPushData, AiPushRequest } from './ai'
+export type { KnowledgeItem, KnowledgePush, PageData } from './knowledge'
+export type { Reminder, ReminderType, ReminderRequest } from './reminder'
+export type { PlatformStatistics, RiskDistribution, DailyDataCount, AdminUserItem } from './statistics'

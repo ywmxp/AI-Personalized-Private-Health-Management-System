@@ -1,12 +1,37 @@
 import request from './request'
+import { isMockEnabled, mockSuccess, mockHealthRecords, mockTrends } from './mock'
 import type { ApiResponse, HealthRecord, HealthDataUpload } from '../types'
 
 /** 获取健康数据列表 */
-export function getHealthRecords() {
-  return request.get<ApiResponse<HealthRecord[]>>('/api/health/records')
+export async function getHealthRecords(params?: { dataType?: string; startTime?: string; endTime?: string; page?: number; size?: number }) {
+  if (isMockEnabled()) return mockSuccess(mockHealthRecords)
+  return request.get<ApiResponse<{ items: HealthRecord[]; page: number; size: number; total: number }>>('/api/health-data', { params })
 }
 
 /** 上传健康数据 */
-export function uploadHealthData(data: HealthDataUpload) {
-  return request.post<ApiResponse<HealthRecord>>('/api/health/records', data)
+export async function uploadHealthData(data: HealthDataUpload) {
+  if (isMockEnabled()) return mockSuccess({ id: Date.now() } as HealthRecord)
+  return request.post<ApiResponse<HealthRecord>>('/api/health-data', data)
+}
+
+/** 删除健康数据 */
+export async function deleteHealthData(_dataId: number) {
+  if (isMockEnabled()) return mockSuccess(null)
+  return request.delete<ApiResponse<null>>(`/api/health-data/${_dataId}`)
+}
+
+/** 健康趋势数据 */
+export async function getHealthTrends(_params: { dataType: string; startTime: string; endTime: string }) {
+  if (isMockEnabled()) return mockSuccess(mockTrends)
+  return request.get<ApiResponse<{ dataType: string; points: { date: string; value: string }[] }>>('/api/health-data/trends', { params: _params })
+}
+
+/** 批量导入健康数据 */
+export async function importHealthData(_file: File) {
+  if (isMockEnabled()) return mockSuccess({ importedCount: 5 })
+  const formData = new FormData()
+  formData.append('file', _file)
+  return request.post<ApiResponse<{ importedCount: number }>>('/api/health-data/import', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
 }
