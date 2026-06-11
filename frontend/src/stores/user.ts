@@ -6,9 +6,18 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { User } from '../types'
 
+function parseStoredUserInfo() {
+  try {
+    return JSON.parse(localStorage.getItem('userInfo') || 'null')
+  } catch {
+    localStorage.removeItem('userInfo')
+    return null
+  }
+}
+
 export const useUserStore = defineStore('user', () => {
   // 用户信息
-  const userInfo = ref(JSON.parse(localStorage.getItem('userInfo') || 'null'))
+  const userInfo = ref(parseStoredUserInfo())
   // Token
   const token = ref(localStorage.getItem('token') || '')
 
@@ -16,7 +25,7 @@ export const useUserStore = defineStore('user', () => {
   const isLoggedIn = computed(() => !!token.value)
 
   /** 是否为管理员 */
-  const isAdmin = computed(() => userInfo.value?.role === 'admin')
+  const isAdmin = computed(() => userInfo.value?.role === 'ADMIN')
 
   /**
    * 设置登录信息

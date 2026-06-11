@@ -1,4 +1,3 @@
-// 路由配置
 import { createRouter, createWebHistory } from 'vue-router'
 
 const router = createRouter({
@@ -27,38 +26,85 @@ const router = createRouter({
           name: 'home',
           component: () => import('../views/HomeView.vue'),
         },
+        // 健康数据
         {
           path: 'health-data',
           name: 'health-data',
           component: () => import('../views/HealthDataView.vue'),
         },
+        // 健康趋势图 (3.5.1)
         {
-          path: 'ai-advice',
-          name: 'ai-advice',
-          component: () => import('../views/AiAdviceView.vue'),
+          path: 'health-trends',
+          name: 'health-trends',
+          component: () => import('../views/HealthTrendView.vue'),
         },
+        // AI 健康画像 (3.3.1)
+        {
+          path: 'ai-profile',
+          name: 'ai-profile',
+          component: () => import('../views/AiHealthProfile.vue'),
+        },
+        // AI 健康计划 (3.3.2)
+        {
+          path: 'ai-plan',
+          name: 'ai-plan',
+          component: () => import('../views/AiHealthPlan.vue'),
+        },
+        // 健康知识 (3.3.3)
+        {
+          path: 'knowledge',
+          name: 'knowledge',
+          component: () => import('../views/KnowledgeView.vue'),
+        },
+        // 健康提醒 (3.4.1)
         {
           path: 'reminders',
           name: 'reminders',
           component: () => import('../views/ReminderView.vue'),
         },
+        // 个人中心
         {
           path: 'profile',
           name: 'profile',
           component: () => import('../views/ProfileView.vue'),
+        },
+        // ---- 管理员路由 ----
+        {
+          path: 'admin/users',
+          name: 'user-management',
+          component: () => import('../views/admin/UserManagement.vue'),
+          meta: { requiresAdmin: true, title: '用户管理' },
+        },
+        {
+          path: 'admin/statistics',
+          name: 'admin-statistics',
+          component: () => import('../views/admin/StatisticsView.vue'),
+          meta: { requiresAdmin: true, title: '健康数据统计' },
         },
       ],
     },
   ],
 })
 
-// 路由守卫：未登录重定向到 /login，已登录访问 /login 或 /register 重定向到 /home
+// 路由守卫
 router.beforeEach((to, _from, next) => {
   const token = localStorage.getItem('token')
+
   if (to.path === '/login' || to.path === '/register') {
     token ? next('/home') : next()
   } else {
-    token ? next() : next('/login')
+    if (!token) {
+      next('/login')
+    } else {
+      if (to.meta.requiresAdmin) {
+        const role = localStorage.getItem('role')
+        if (role !== 'admin') {
+          next('/home')
+          return
+        }
+      }
+      next()
+    }
   }
 })
 

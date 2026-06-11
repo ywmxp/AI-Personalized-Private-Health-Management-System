@@ -14,10 +14,10 @@ export async function login(phone: string, password: string) {
         data: {
           token: 'mock-token-' + Date.now(),
           user: {
-            id: 1,
+            userId: 1,
             username: phone,
-            email: phone + '@health.app',
-            role: 'user',
+            phone: phone,
+            role: 'USER',
           },
         },
       } as ApiResponse<LoginResponse>,
