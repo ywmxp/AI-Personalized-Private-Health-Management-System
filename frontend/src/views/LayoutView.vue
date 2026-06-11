@@ -12,11 +12,15 @@
       </el-main>
     </el-container>
   </el-container>
+
+  <!-- 提醒推送弹窗 (3.4.2) -->
+  <ReminderPopup />
 </template>
 
 <script setup lang="ts">
 import AppHeader from '../components/layout/AppHeader.vue'
 import AppSidebar from '../components/layout/AppSidebar.vue'
+import ReminderPopup from '../components/reminder/ReminderPopup.vue'
 </script>
 
 <style scoped>

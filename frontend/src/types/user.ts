@@ -1,10 +1,12 @@
-/** 用户信息 */
+/** 用户信息（对齐后端 CurrentUserResponse / UserSummaryResponse） */
 export interface User {
-  id: number
+  userId: number
   username: string
-  email: string
-  role: 'admin' | 'user'
-  avatar?: string
+  phone: string
+  birthDate?: string
+  gender?: 'MALE' | 'FEMALE' | 'UNKNOWN'
+  height?: number
+  role: 'USER' | 'ADMIN'
 }
 
 /** 登录请求 */
