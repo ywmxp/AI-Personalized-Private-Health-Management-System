@@ -51,7 +51,12 @@ class AIService:
         knowledge_lines = []
         for item in request.knowledge_items:
             knowledge_lines.append(f"ID={item.knowledge_id}: {item.title} (标签: {item.relate_tag})")
-        context = f"健康标签: {tags}\n\n候选知识:\n" + "\n".join(knowledge_lines)
+        context = (
+            f"健康标签: {tags}\n"
+            f"风险等级: {request.risk_level}\n"
+            f"健康分析: {request.analysis}\n\n"
+            f"候选知识:\n" + "\n".join(knowledge_lines)
+        )
         raw = await self._push_agent.run(context)
         data = self._push_agent.parse_response(raw)
         return PushResponse(
