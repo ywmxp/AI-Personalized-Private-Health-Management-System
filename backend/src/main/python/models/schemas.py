@@ -41,6 +41,8 @@ class KnowledgeItem(BaseModel):
 class PushRequest(BaseModel):
     profile_id: int = Field(..., alias="profileId")
     health_tags: list[str] = Field(..., alias="healthTags", min_length=1)
+    risk_level: str = Field(..., alias="riskLevel")
+    analysis: str = ""
     knowledge_items: list[KnowledgeItem] = Field(..., alias="knowledgeItems")
 
 
