@@ -77,6 +77,7 @@ export const mockKnowledgePushes = [
 ]
 
 export const mockAdminUsers = [
+<<<<<<< HEAD
   { userId: 1, username: 'admin', phone: '138****8000', email: 'admin@health.app', role: 'admin', status: 1, createTime: '2026-05-01 10:00:00', birthDate: '1995-03-15', gender: 'MALE', height: 175 },
   { userId: 2, username: 'test_user', phone: '139****9000', email: 'test@health.app', role: 'user', status: 1, createTime: '2026-05-05 14:00:00', birthDate: '1998-07-22', gender: 'FEMALE', height: 162 },
   { userId: 3, username: 'zhangsan', phone: '137****7000', email: 'zhangsan@example.com', role: 'user', status: 0, createTime: '2026-05-10 09:00:00', birthDate: '2000-01-10', gender: 'UNKNOWN', height: 170 },
@@ -88,6 +89,11 @@ export const mockLoginLogs = [
   { logId: 3, userId: 2, phone: '139****9000', loginIp: '192.168.1.100', loginTime: '2026-06-10 07:45:00', loginResult: 1 },
   { logId: 4, userId: 1, phone: '138****8000', loginIp: '10.0.0.1', loginTime: '2026-06-10 08:00:00', loginResult: 1 },
   { logId: 5, userId: 3, phone: '137****7000', loginIp: '192.168.1.101', loginTime: '2026-06-10 08:20:00', loginResult: 1 },
+=======
+  { userId: 1, username: 'admin', phone: '138****8000', email: 'admin@health.app', role: 'admin', status: 1, createTime: '2026-05-01 10:00:00' },
+  { userId: 2, username: 'test_user', phone: '139****9000', email: 'test@health.app', role: 'user', status: 1, createTime: '2026-05-05 14:00:00' },
+  { userId: 3, username: 'zhangsan', phone: '137****7000', email: 'zhangsan@example.com', role: 'user', status: 0, createTime: '2026-05-10 09:00:00' },
+>>>>>>> dev
 ]
 
 export const mockPlatformStatistics = {
