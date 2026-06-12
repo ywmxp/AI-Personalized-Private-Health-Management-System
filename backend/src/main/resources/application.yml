@@ -16,11 +16,9 @@ spring:
     open-in-view: false
     database-platform: org.hibernate.dialect.MySQLDialect
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
     properties:
       hibernate:
-        boot:
-          allow_jdbc_metadata_access: false
         format_sql: true
   jackson:
     time-zone: Asia/Shanghai

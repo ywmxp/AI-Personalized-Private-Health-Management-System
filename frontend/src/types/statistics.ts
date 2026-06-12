@@ -26,4 +26,19 @@ export interface AdminUserItem {
   role: string
   status: number    // 1=启用, 0=禁用
   createTime: string
+  birthDate?: string
+  gender?: string
+  height?: number
+}
+
+/** 登录日志 */
+export interface LoginLog {
+  logId: number
+  userId: number
+  phone: string
+  loginIp: string
+  loginTime: string
+  loginResult: number  // 1=成功, 0=失败
+=======
+>>>>>>> dev
 }
