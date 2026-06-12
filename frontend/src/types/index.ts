@@ -4,8 +4,4 @@ export type { ApiResponse } from './api'
 export type { AiProfileData, AiProfileRequest, AiPlanData, AiPlanRequest, AiPushData, AiPushRequest } from './ai'
 export type { KnowledgeItem, KnowledgePush, PageData } from './knowledge'
 export type { Reminder, ReminderType, ReminderRequest } from './reminder'
-<<<<<<< HEAD
 export type { PlatformStatistics, RiskDistribution, DailyDataCount, AdminUserItem, LoginLog } from './statistics'
-=======
-export type { PlatformStatistics, RiskDistribution, DailyDataCount, AdminUserItem } from './statistics'
->>>>>>> dev

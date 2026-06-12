@@ -87,25 +87,21 @@ const router = createRouter({
 })
 
 // 路由守卫
-router.beforeEach((to, _from, next) => {
+router.beforeEach((to, _from) => {
   const token = localStorage.getItem('token')
 
   if (to.path === '/login' || to.path === '/register') {
-    token ? next('/home') : next()
-  } else {
-    if (!token) {
-      next('/login')
-    } else {
-      if (to.meta.requiresAdmin) {
-        const role = localStorage.getItem('role')
-        if (role !== 'admin') {
-          next('/home')
-          return
-        }
-      }
-      next()
-    }
+    return token ? '/home' : true
   }
+
+  if (!token) return '/login'
+
+  if (to.meta.requiresAdmin) {
+    const role = localStorage.getItem('role')
+    if (role !== 'admin') return '/home'
+  }
+
+  return true
 })
 
 export default router

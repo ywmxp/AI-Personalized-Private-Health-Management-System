@@ -26,7 +26,6 @@ export interface AdminUserItem {
   role: string
   status: number    // 1=启用, 0=禁用
   createTime: string
-<<<<<<< HEAD
   birthDate?: string
   gender?: string
   height?: number
