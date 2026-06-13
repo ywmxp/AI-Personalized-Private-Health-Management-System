@@ -137,8 +137,15 @@ public class AiProxyService {
     // ---- Knowledge Push ----
 
     public AiPushData pushKnowledge(Long userId, Long profileId) {
-        HealthProfile profile = healthProfileRepository.findById(profileId)
-            .orElseThrow(() -> new BusinessException(ErrorCode.VALIDATION_ERROR, "画像不存在"));
+        HealthProfile profile;
+        if (profileId == null || profileId == 0) {
+            profile = healthProfileRepository.findFirstByUserIdOrderByCreateTimeDesc(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.VALIDATION_ERROR,
+                    "未找到健康画像，请先生成健康画像"));
+        } else {
+            profile = healthProfileRepository.findById(profileId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.VALIDATION_ERROR, "画像不存在"));
+        }
 
         List<String> healthTags;
         try {
@@ -153,7 +160,8 @@ public class AiProxyService {
             .map(k -> new FastApiKnowledgeItem(k.getKnowledgeId(), k.getTitle(), k.getRelateTag()))
             .toList();
 
-        FastApiPushRequest req = new FastApiPushRequest(profileId, healthTags, knowledgeItems);
+        FastApiPushRequest req = new FastApiPushRequest(profileId, healthTags,
+            profile.getRiskLevel(), profile.getAnalysis(), knowledgeItems);
         FastApiPushResponse resp = post("/api/ai/knowledge-push", req, FastApiPushResponse.class);
 
         List<Long> pushIds = new ArrayList<>();

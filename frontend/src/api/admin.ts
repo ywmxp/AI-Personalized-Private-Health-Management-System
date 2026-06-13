@@ -1,6 +1,6 @@
 import request from './request'
-import { isMockEnabled, mockSuccess, mockPage, mockAdminUsers, mockPlatformStatistics } from './mock'
-import type { ApiResponse, AdminUserItem, PlatformStatistics, PageData } from '../types'
+import { isMockEnabled, mockSuccess, mockPage, mockAdminUsers, mockPlatformStatistics, mockLoginLogs } from './mock'
+import type { ApiResponse, AdminUserItem, PlatformStatistics, PageData, LoginLog } from '../types'
 
 /** 获取用户列表（管理员） */
 export async function getAdminUsers(_params: { username?: string; phone?: string; status?: number | null; pageNum: number; pageSize: number }) {
@@ -14,6 +14,14 @@ export async function toggleUserStatus(_userId: number, _status: number) {
   return request.patch<ApiResponse<null>>(`/api/admin/users/${_userId}/status`, { status: _status })
 }
 
+/** 查询登录日志 */
+export async function getLoginLogs(_params: { userId?: number; result?: number; pageNum: number; pageSize: number }) {
+  if (isMockEnabled()) return mockPage(mockLoginLogs, _params.pageNum, _params.pageSize)
+  return request.get<ApiResponse<PageData<LoginLog>>>('/api/admin/login-logs', { params: _params })
+}
+
+=======
+>>>>>>> dev
 /** 平台统计 */
 export async function getPlatformStatistics(_params: { startDate?: string; endDate?: string }) {
   if (isMockEnabled()) return mockSuccess(mockPlatformStatistics)
