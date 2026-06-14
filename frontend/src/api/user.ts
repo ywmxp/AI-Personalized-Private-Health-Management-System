@@ -15,3 +15,8 @@ export function updateProfile(data: {
 }) {
   return request.put<ApiResponse<null>>('/api/users/me', data)
 }
+
+/** 修改密码 */
+export function changePassword(data: { oldPassword: string; newPassword: string }) {
+  return request.put<ApiResponse<null>>('/api/users/me/password', data)
+}

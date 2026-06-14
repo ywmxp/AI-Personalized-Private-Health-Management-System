@@ -79,14 +79,33 @@
         </div>
       </template>
     </el-card>
+
+    <!-- 修改密码 -->
+    <el-card class="password-card">
+      <template #header><span>修改密码</span></template>
+      <el-form :model="pwdForm" :rules="pwdRules" ref="pwdFormRef" label-width="100px" style="max-width: 400px">
+        <el-form-item label="原密码" prop="oldPassword">
+          <el-input v-model="pwdForm.oldPassword" type="password" show-password />
+        </el-form-item>
+        <el-form-item label="新密码" prop="newPassword">
+          <el-input v-model="pwdForm.newPassword" type="password" show-password />
+        </el-form-item>
+        <el-form-item label="确认新密码" prop="confirmPassword">
+          <el-input v-model="pwdForm.confirmPassword" type="password" show-password />
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" :loading="pwdSaving" @click="handleChangePwd">修改密码</el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance } from 'element-plus'
-import { getCurrentUser, updateProfile } from '../api/user'
+import { getCurrentUser, updateProfile, changePassword } from '../api/user'
 import { useUserStore } from '../stores/user'
 import type { User } from '../types'
 
@@ -163,6 +182,55 @@ async function saveEdit() {
   }
 }
 
+// ============ 修改密码 ============
+const pwdFormRef = ref<FormInstance>()
+const pwdSaving = ref(false)
+const pwdForm = reactive({
+  oldPassword: '',
+  newPassword: '',
+  confirmPassword: '',
+})
+
+const validateConfirmPwd = (_rule: unknown, value: string, callback: (err?: Error) => void) => {
+  if (value !== pwdForm.newPassword) {
+    callback(new Error('两次输入的密码不一致'))
+  } else {
+    callback()
+  }
+}
+
+const pwdRules = {
+  oldPassword: [{ required: true, message: '请输入原密码', trigger: 'blur' }],
+  newPassword: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { min: 6, message: '密码长度不少于6位', trigger: 'blur' },
+  ],
+  confirmPassword: [
+    { required: true, message: '请再次输入新密码', trigger: 'blur' },
+    { validator: validateConfirmPwd, trigger: 'blur' },
+  ],
+}
+
+async function handleChangePwd() {
+  if (!pwdFormRef.value) return
+  const valid = await pwdFormRef.value.validate().catch(() => false)
+  if (!valid) return
+
+  pwdSaving.value = true
+  try {
+    await changePassword({ oldPassword: pwdForm.oldPassword, newPassword: pwdForm.newPassword })
+    ElMessage.success('密码修改成功')
+    pwdForm.oldPassword = ''
+    pwdForm.newPassword = ''
+    pwdForm.confirmPassword = ''
+    pwdFormRef.value.resetFields()
+  } catch {
+    // handled
+  } finally {
+    pwdSaving.value = false
+  }
+}
+
 onMounted(async () => {
   loading.value = true
   try {
@@ -194,5 +262,8 @@ onMounted(async () => {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+}
+.password-card {
+  margin-top: 20px;
 }
 </style>

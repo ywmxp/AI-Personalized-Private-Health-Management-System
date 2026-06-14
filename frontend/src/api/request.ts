@@ -20,11 +20,7 @@ request.interceptors.response.use(
   (response) => {
     const data = response.data as ApiResponse
     if (data.code !== 0) {
-      // AI 服务异常时精简提示
-      const msg = data.code === 50000
-        ? 'AI 服务异常，请稍后重试'
-        : (data.message || '请求失败')
-      ElMessage.error(msg)
+      ElMessage.error(data.message || '请求失败')
       // reject 时附带原始 code，便于调用方按需处理
       const err = new Error(data.message) as Error & { code: number }
       err.code = data.code

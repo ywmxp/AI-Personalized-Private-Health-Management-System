@@ -1,5 +1,7 @@
 package com.health.backend.controller;
 
+import java.util.Map;
+
 import jakarta.validation.Valid;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -36,5 +38,15 @@ public class UserController {
         @Valid @RequestBody UpdateUserRequest request
     ) {
         return ApiResponse.success(userService.updateCurrentUser(currentUser.userId(), request));
+    }
+
+    @PutMapping("/me/password")
+    public ApiResponse<Void> changePassword(
+        @AuthenticationPrincipal JwtUser currentUser,
+        @RequestBody Map<String, String> body
+    ) {
+        userService.changePassword(currentUser.userId(),
+            body.get("oldPassword"), body.get("newPassword"));
+        return ApiResponse.success(null);
     }
 }
