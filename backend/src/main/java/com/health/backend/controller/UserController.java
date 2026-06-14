@@ -1,8 +1,8 @@
 package com.health.backend.controller;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.Map;
+
+import jakarta.validation.Valid;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.health.backend.dto.ApiResponse;
 import com.health.backend.dto.CurrentUserResponse;
+import com.health.backend.dto.UpdateUserRequest;
 import com.health.backend.security.JwtUser;
 import com.health.backend.service.UserService;
 
@@ -34,10 +35,9 @@ public class UserController {
     @PutMapping("/me")
     public ApiResponse<CurrentUserResponse> updateMe(
         @AuthenticationPrincipal JwtUser currentUser,
-        @RequestBody UpdateProfileRequest req
+        @Valid @RequestBody UpdateUserRequest request
     ) {
-        return ApiResponse.success(userService.updateProfile(
-            currentUser.userId(), req.username, req.birthDate, req.gender, req.height));
+        return ApiResponse.success(userService.updateCurrentUser(currentUser.userId(), request));
     }
 
     @PutMapping("/me/password")
@@ -49,6 +49,4 @@ public class UserController {
             body.get("oldPassword"), body.get("newPassword"));
         return ApiResponse.success(null);
     }
-
-    record UpdateProfileRequest(String username, LocalDate birthDate, String gender, BigDecimal height) {}
 }
