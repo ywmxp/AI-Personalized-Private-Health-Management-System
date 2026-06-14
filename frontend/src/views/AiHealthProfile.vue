@@ -87,8 +87,20 @@
       </el-card>
     </div>
 
+    <!-- 空数据提示 -->
+    <el-alert
+      v-if="noDataError && !generating"
+      title="所选时段没有健康数据可供分析"
+      type="warning"
+      :closable="false"
+      show-icon
+      style="margin-bottom: 16px"
+    >
+      请先在「健康数据」页面录入数据，或切换更长的时间范围后重试。
+    </el-alert>
+
     <!-- 空状态 -->
-    <EmptyState v-if="!profileData && !generating" description="点击「生成健康画像」按钮，AI 将分析您的健康数据" />
+    <EmptyState v-if="!profileData && !generating && !noDataError" description="点击「生成健康画像」按钮，AI 将分析您的健康数据" />
   </div>
 </template>
 
@@ -104,6 +116,7 @@ import type { AiProfileData } from '../types'
 const timeRange = ref('LAST_7_DAYS')
 const generating = ref(false)
 const profileData = ref<AiProfileData | null>(null)
+const noDataError = ref(false)  // 所选时段无健康数据
 
 const riskTagType = computed(() => {
   const map: Record<string, string> = { LOW: 'success', MEDIUM: 'warning', HIGH: 'danger' }
@@ -131,12 +144,17 @@ function tagType(tag: string): 'success' | 'warning' | 'danger' | 'info' {
 async function handleGenerate() {
   generating.value = true
   profileData.value = null
+  noDataError.value = false
   try {
     const res = await generateProfile({ timeRange: timeRange.value })
     profileData.value = res.data.data
     ElMessage.success('健康画像生成成功！')
-  } catch {
-    // 错误已在拦截器中处理
+  } catch (err: unknown) {
+    const e = err as Error & { code?: number }
+    // code 50000: AI 服务返回异常（常见于无健康数据）
+    if (e.code === 50000) {
+      noDataError.value = true
+    }
   } finally {
     generating.value = false
   }

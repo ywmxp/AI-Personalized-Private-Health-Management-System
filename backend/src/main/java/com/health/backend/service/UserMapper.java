@@ -14,7 +14,12 @@ public class UserMapper {
             user.getUserId(),
             user.getUsername(),
             maskPhone(user.getPhone()),
-            user.getRole().name()
+            user.getRole().name(),
+            user.getStatus().name().equals("ENABLED") ? 1 : 0,
+            user.getCreateTime().toString(),
+            user.getBirthDate(),
+            user.getGender() != null ? user.getGender().name() : null,
+            user.getHeight()
         );
     }
 

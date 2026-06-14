@@ -1,13 +1,12 @@
 /**
  * Mock 工具 — 后端 API 未就绪时返回模拟数据
- * 设置环境变量 VITE_MOCK_API=true 启用
- * 后端接口补全后设为 false 即可切换到真实 API
+ * 开发调试时在 .env 中设 VITE_MOCK_API=true 启用 Mock
+ * 默认关闭（直连真实后端）
  */
 import type { ApiResponse } from '../types'
 
-// 是否开启全局 Mock（后端 API 未就绪时默认开启）
-// 设为 VITE_MOCK_API=false 可切换到真实后端 API
-const MOCK_API = import.meta.env.VITE_MOCK_API !== 'false'
+// 默认关闭 Mock，仅当显式设为 true 时启用
+const MOCK_API = import.meta.env.VITE_MOCK_API === 'true'
 
 /** 创建 mock 成功的 ApiResponse */
 export function mockSuccess<T>(data: T): { data: ApiResponse<T> } {
@@ -33,17 +32,26 @@ export function mockPage<T>(items: T[], page = 1, size = 10, total = 0): { data:
 
 // ---- 模拟数据 ----
 
-export const mockHealthRecords = {
-  items: [
-    { id: 1, userId: 1, type: 'WEIGHT', value: 70.5, unit: 'kg', recordedAt: '2026-06-01 08:30:00' },
-    { id: 2, userId: 1, type: 'WEIGHT', value: 69.8, unit: 'kg', recordedAt: '2026-06-03 08:30:00' },
-    { id: 3, userId: 1, type: 'BLOOD_PRESSURE', value: 120, unit: 'mmHg', recordedAt: '2026-06-01 09:00:00' },
-    { id: 4, userId: 1, type: 'SLEEP_HOURS', value: 7.5, unit: '小时', recordedAt: '2026-06-05 07:00:00' },
-    { id: 5, userId: 1, type: 'EXERCISE_MINUTES', value: 45, unit: '分钟', recordedAt: '2026-06-04 18:00:00' },
-  ],
-  page: 1,
-  size: 10,
-  total: 5,
+// 可变健康数据（支持增删）
+let _healthId = 100
+const _mockHealthItems = [
+  { dataId: 1, userId: 1, dataType: 'WEIGHT', dataValue: '70.5', unit: 'kg', recordTime: '2026-06-01 08:30:00' },
+  { dataId: 2, userId: 1, dataType: 'WEIGHT', dataValue: '69.8', unit: 'kg', recordTime: '2026-06-03 08:30:00' },
+  { dataId: 3, userId: 1, dataType: 'BLOOD_PRESSURE', dataValue: '120', unit: 'mmHg', recordTime: '2026-06-01 09:00:00' },
+  { dataId: 4, userId: 1, dataType: 'SLEEP_HOURS', dataValue: '7.5', unit: '小时', recordTime: '2026-06-05 07:00:00' },
+  { dataId: 5, userId: 1, dataType: 'EXERCISE_MINUTES', dataValue: '45', unit: '分钟', recordTime: '2026-06-04 18:00:00' },
+]
+export function getMockHealthRecords() {
+  return { items: _mockHealthItems, page: 1, size: 10, total: _mockHealthItems.length }
+}
+export function addMockHealthRecord(item: { dataType: string; dataValue: string; unit: string }) {
+  const r = { dataId: ++_healthId, userId: 1, ...item, recordTime: new Date().toISOString().replace('T', ' ').slice(0, 19) }
+  _mockHealthItems.unshift(r)
+  return r
+}
+export function deleteMockHealthRecord(id: number) {
+  const i = _mockHealthItems.findIndex((r) => r.dataId === id)
+  if (i !== -1) _mockHealthItems.splice(i, 1)
 }
 
 export const mockTrends = {
@@ -59,11 +67,27 @@ export const mockTrends = {
   ],
 }
 
-export const mockReminders = [
+// 可变提醒数据（支持增删改）
+let _reminderId = 100
+export const mockReminders: Array<{ reminderId: number; userId: number; reminderType: string; reminderTime: string; status: number }> = [
   { reminderId: 1, userId: 1, reminderType: 'MEDICATION', reminderTime: '08:30:00', status: 1 },
   { reminderId: 2, userId: 1, reminderType: 'EXERCISE', reminderTime: '18:00:00', status: 1 },
   { reminderId: 3, userId: 1, reminderType: 'SLEEP', reminderTime: '22:30:00', status: 0 },
 ]
+export function addMockReminder(item: { reminderType: string; reminderTime: string; status: number }) {
+  const r = { reminderId: ++_reminderId, userId: 1, ...item }
+  mockReminders.push(r)
+  return r
+}
+export function updateMockReminder(id: number, data: { reminderType: string; reminderTime: string; status: number }) {
+  const i = mockReminders.findIndex((r) => r.reminderId === id)
+  if (i !== -1) Object.assign(mockReminders[i], data)
+  return mockReminders[i] || null
+}
+export function toggleMockReminderStatus(id: number, status: number) {
+  const r = mockReminders.find((r) => r.reminderId === id)
+  if (r) r.status = status
+}
 
 export const mockKnowledgeItems = [
   { knowledgeId: 1, title: '每日饮水指南', content: '成年人每天建议饮水1500-2000ml，少量多次饮用效果更佳。晨起一杯温水有助唤醒身体。', relateTag: '饮水', source: '系统内置', createTime: '2026-05-01 10:00:00' },
@@ -77,9 +101,17 @@ export const mockKnowledgePushes = [
 ]
 
 export const mockAdminUsers = [
-  { userId: 1, username: 'admin', phone: '138****8000', email: 'admin@health.app', role: 'admin', status: 1, createTime: '2026-05-01 10:00:00' },
-  { userId: 2, username: 'test_user', phone: '139****9000', email: 'test@health.app', role: 'user', status: 1, createTime: '2026-05-05 14:00:00' },
-  { userId: 3, username: 'zhangsan', phone: '137****7000', email: 'zhangsan@example.com', role: 'user', status: 0, createTime: '2026-05-10 09:00:00' },
+  { userId: 1, username: 'admin', phone: '138****8000', email: 'admin@health.app', role: 'admin', status: 1, createTime: '2026-05-01 10:00:00', birthDate: '1995-03-15', gender: 'MALE', height: 175 },
+  { userId: 2, username: 'test_user', phone: '139****9000', email: 'test@health.app', role: 'user', status: 1, createTime: '2026-05-05 14:00:00', birthDate: '1998-07-22', gender: 'FEMALE', height: 162 },
+  { userId: 3, username: 'zhangsan', phone: '137****7000', email: 'zhangsan@example.com', role: 'user', status: 0, createTime: '2026-05-10 09:00:00', birthDate: '2000-01-10', gender: 'UNKNOWN', height: 170 },
+]
+
+export const mockLoginLogs = [
+  { logId: 1, userId: 2, phone: '139****9000', loginIp: '192.168.1.100', loginTime: '2026-06-09 08:30:00', loginResult: 1 },
+  { logId: 2, userId: 3, phone: '137****7000', loginIp: '192.168.1.101', loginTime: '2026-06-09 09:15:00', loginResult: 0 },
+  { logId: 3, userId: 2, phone: '139****9000', loginIp: '192.168.1.100', loginTime: '2026-06-10 07:45:00', loginResult: 1 },
+  { logId: 4, userId: 1, phone: '138****8000', loginIp: '10.0.0.1', loginTime: '2026-06-10 08:00:00', loginResult: 1 },
+  { logId: 5, userId: 3, phone: '137****7000', loginIp: '192.168.1.101', loginTime: '2026-06-10 08:20:00', loginResult: 1 },
 ]
 
 export const mockPlatformStatistics = {
