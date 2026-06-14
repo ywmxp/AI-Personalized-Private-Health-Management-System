@@ -1,0 +1,18 @@
+# FastAPI + Server
+fastapi>=0.115.0
+uvicorn[standard]>=0.34.0
+
+# Microsoft Agent Framework (AutoGen)
+autogen-core>=0.4.0
+autogen-agentchat>=0.4.0
+autogen-ext[openai]>=0.4.0
+
+# Additional AI/ML
+openai>=1.68.0
+httpx>=0.28.0
+
+# Database
+pymysql>=1.1.0
+
+# Environment
+python-dotenv>=1.0.0

@@ -1,0 +1,133 @@
+<template>
+  <div class="login-container">
+    <el-card class="login-card" shadow="hover">
+      <h2 class="login-title">AI个性化健康管理系统</h2>
+      <el-form
+        :model="loginForm"
+        :rules="loginRules"
+        ref="loginFormRef"
+        label-width="80px"
+        class="login-form"
+      >
+        <el-form-item label="手机号" prop="phone">
+          <el-input
+            v-model="loginForm.phone"
+            placeholder="请输入手机号"
+            clearable
+          />
+        </el-form-item>
+
+        <el-form-item label="密码" prop="password">
+          <el-input
+            v-model="loginForm.password"
+            type="password"
+            placeholder="请输入密码"
+            show-password
+            clearable
+          />
+        </el-form-item>
+
+        <el-form-item>
+          <el-button
+            type="primary"
+            :loading="loading"
+            @click="handleLogin"
+            style="width: 100%; height: 40px; font-size: 16px"
+          >
+            登录
+          </el-button>
+        </el-form-item>
+      </el-form>
+
+      <div class="register-link">
+        还没有账号？
+        <el-link type="primary" @click="$router.push('/register')">
+          立即注册
+        </el-link>
+      </div>
+    </el-card>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import type { FormInstance } from 'element-plus'
+import { login } from '../api/auth'
+import { useUserStore } from '../stores/user'
+
+const router = useRouter()
+const userStore = useUserStore()
+
+const loginFormRef = ref<FormInstance>()
+const loading = ref(false)
+
+const loginForm = ref({
+  phone: '',
+  password: '',
+})
+
+const loginRules = {
+  phone: [
+    { required: true, message: '请输入手机号', trigger: 'blur' },
+    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号格式', trigger: 'blur' },
+  ],
+  password: [
+    { required: true, message: '请输入密码', trigger: 'blur' },
+    { min: 6, message: '密码长度不能少于6位', trigger: 'blur' },
+  ],
+}
+
+async function handleLogin() {
+  if (!loginFormRef.value) return
+  const valid = await loginFormRef.value.validate().catch(() => false)
+  if (!valid) return
+
+  loading.value = true
+  try {
+    const res = await login(loginForm.value.phone, loginForm.value.password)
+    userStore.setLoginInfo(res.data.data!)
+    ElMessage.success('登录成功')
+    router.push('/home')
+  } catch {
+    // 错误已在拦截器中处理
+  } finally {
+    loading.value = false
+  }
+}
+</script>
+
+<style scoped>
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.login-card {
+  width: 450px;
+  padding: 30px 50px;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.login-title {
+  text-align: center;
+  margin-bottom: 30px;
+  color: #303133;
+  font-weight: 600;
+}
+
+.login-form {
+  margin-bottom: 20px;
+}
+
+.register-link {
+  text-align: center;
+  color: #909399;
+  font-size: 14px;
+}
+</style>
