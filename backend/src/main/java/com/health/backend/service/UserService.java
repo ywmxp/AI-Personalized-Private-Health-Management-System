@@ -3,8 +3,10 @@ package com.health.backend.service;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.health.backend.domain.Gender;
 import com.health.backend.domain.User;
 import com.health.backend.dto.CurrentUserResponse;
+import com.health.backend.dto.UpdateUserRequest;
 import com.health.backend.exception.BusinessException;
 import com.health.backend.exception.ErrorCode;
 import com.health.backend.repository.UserRepository;
@@ -24,6 +26,28 @@ public class UserService {
     public CurrentUserResponse getCurrentUser(Long userId) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED, "用户不存在或登录已失效"));
+        return userMapper.toCurrentUserResponse(user);
+    }
+
+    @Transactional
+    public CurrentUserResponse updateCurrentUser(Long userId, UpdateUserRequest request) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED, "用户不存在或登录已失效"));
+
+        Gender gender;
+        try {
+            gender = Gender.valueOf(request.gender().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR,
+                "性别值无效，必须为 MALE、FEMALE 或 UNKNOWN");
+        }
+
+        user.setUsername(request.username());
+        user.setBirthDate(request.birthDate());
+        user.setGender(gender);
+        user.setHeight(request.height());
+
+        userRepository.save(user);
         return userMapper.toCurrentUserResponse(user);
     }
 }
