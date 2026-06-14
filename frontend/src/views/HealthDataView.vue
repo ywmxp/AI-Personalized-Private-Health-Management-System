@@ -22,7 +22,15 @@
           </div>
           <div class="form-item">
             <label>数值</label>
-            <el-input-number v-model="form.dataValue" :min="0" :precision="1" style="width: 160px" />
+            <!-- 血压：双输入框 -->
+            <template v-if="form.dataType === 'BLOOD_PRESSURE'">
+              <div class="bp-inputs">
+                <el-input v-model="bpSystolic" placeholder="收缩压" style="width: 80px" />
+                <span class="bp-slash">/</span>
+                <el-input v-model="bpDiastolic" placeholder="舒张压" style="width: 80px" />
+              </div>
+            </template>
+            <el-input v-else v-model="form.dataValue" placeholder="如 70.5" style="width: 160px" />
           </div>
           <div class="form-item">
             <label>单位</label>
@@ -134,7 +142,7 @@ const now = () => {
 
 const form = reactive({
   dataType: 'WEIGHT',
-  dataValue: 70,
+  dataValue: '70.5',
   recordTime: now(),
 })
 
@@ -147,22 +155,40 @@ const dataUnits: Record<string, string> = {
 }
 const dataUnit = computed(() => dataUnits[form.dataType] || '')
 
+// 血压双输入框
+const bpSystolic = ref('120')
+const bpDiastolic = ref('80')
+// 切换血压时从 form.dataValue 拆分，否则组合
+function syncBpFromForm() {
+  if (form.dataType === 'BLOOD_PRESSURE' && form.dataValue.includes('/')) {
+    const parts = form.dataValue.split('/')
+    bpSystolic.value = parts[0]
+    bpDiastolic.value = parts[1]
+  }
+}
+function syncBpToForm() {
+  if (form.dataType === 'BLOOD_PRESSURE') {
+    form.dataValue = bpSystolic.value + '/' + bpDiastolic.value
+  }
+}
+
 const submitting = ref(false)
 
 async function handleSubmit() {
-  if (!form.dataType || form.dataValue <= 0) {
+  if (!form.dataType || !form.dataValue.trim()) {
     ElMessage.warning('请完善数据信息')
     return
   }
   submitting.value = true
   try {
+    syncBpToForm()
     await uploadHealthData({
       dataType: form.dataType,
       dataValue: String(form.dataValue),
       unit: dataUnit.value,
     })
     ElMessage.success('数据录入成功')
-    form.dataValue = 70
+    form.dataValue = '70.5'
     form.recordTime = now()
     await fetchRecords()
   } catch {
@@ -291,6 +317,16 @@ onMounted(fetchRecords)
   color: #909399;
   display: inline-block;
   min-width: 50px;
+}
+.bp-inputs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.bp-slash {
+  font-size: 18px;
+  font-weight: 600;
+  color: #606266;
 }
 .form-actions {
   display: flex;
