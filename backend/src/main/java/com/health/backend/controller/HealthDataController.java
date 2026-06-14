@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.health.backend.domain.HealthData;
 import com.health.backend.dto.ApiResponse;
@@ -52,6 +53,16 @@ public class HealthDataController {
     ) {
         return ApiResponse.success(healthDataService.query(
             currentUser.userId(), dataType, startTime, endTime, page, size));
+    }
+
+    /** 批量导入健康数据 CSV */
+    @PostMapping("/import")
+    public ApiResponse<Map<String, Integer>> importCsv(
+        @AuthenticationPrincipal JwtUser currentUser,
+        @RequestParam(value = "file", required = false) MultipartFile file
+    ) {
+        int importedCount = healthDataService.importCsv(currentUser.userId(), file);
+        return ApiResponse.success(Map.of("importedCount", importedCount));
     }
 
     /** 删除健康数据 */
