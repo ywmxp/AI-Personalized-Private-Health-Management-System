@@ -47,6 +47,9 @@
           <el-button @click="handleImport">
             <el-icon><Upload /></el-icon> 批量导入 (CSV)
           </el-button>
+          <el-link href="/health_data_template.csv" target="_blank" :underline="false" style="margin-left: 8px">
+            <el-icon><Download /></el-icon> 下载模板
+          </el-link>
           <input
             ref="fileInput"
             type="file"
@@ -119,7 +122,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Upload, Delete } from '@element-plus/icons-vue'
+import { Upload, Delete, Download } from '@element-plus/icons-vue'
 import { getHealthRecords, uploadHealthData, deleteHealthData, importHealthData } from '../api/health'
 import type { HealthRecord } from '../types'
 
