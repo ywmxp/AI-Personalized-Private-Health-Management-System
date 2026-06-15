@@ -1,43 +1,68 @@
 # AI个性化私人健康管理系统
 
-当前仓库已经完成最小项目骨架初始化：
+一个面向日常健康管理场景的全栈项目，包含用户认证、健康数据记录与导入、趋势展示、AI 健康画像、AI 健康计划、健康知识推送、提醒管理和管理员统计能力。
 
-- `frontend/`: Vue 3.5 + Vite 8 + TypeScript
-- `backend/`: Spring Boot 3.5.7 + Java 21 + Maven Wrapper
-- `compose.yaml`: 本地 MySQL 8.4 Docker 编排
-- `scripts/`: 初始化与本地启动脚本
-- `docs/`: 项目文档占位
+当前仓库不是“空骨架”，而是已经具备前后端页面、核心接口、数据库初始化脚本和 AI 服务接入链路的可运行开发版本。
+
+## 当前实现状态
+
+已接入并可运行的模块：
+
+- 用户注册、登录、JWT 鉴权
+- 个人信息查看与修改、密码修改
+- 健康数据新增、分页查询、删除
+- 健康数据 CSV 批量导入
+- 健康趋势查询
+- AI 健康画像生成
+- AI 健康计划生成
+- AI 健康知识推送与已读标记
+- 健康提醒增删改查与启停
+- 管理员用户列表、状态切换、登录日志、平台统计
+- Vue 3 前端页面与路由守卫
+- FastAPI AI 服务与 Spring Boot 代理调用
+
+当前仍需注意的点：
+
+- 管理员相关页面和接口已存在，但仓库内没有默认管理员初始化数据
+- AI 服务未配置 `AI_API_KEY` 或未启动时，Spring Boot 侧会回退到内置 mock 结果，便于联调
+- 前端仍保留 `VITE_MOCK_API` / `VITE_MOCK_AUTH` 开关，便于纯前端开发
+- 仓库内部分设计文档仍是草案，和代码实现可能不完全同步
+
+## 技术栈
+
+- 前端：Vue 3、TypeScript、Vite、Pinia、Vue Router、Element Plus
+- 主后端：Spring Boot 3.5、Java 21、Spring Security、Spring Data JPA、MySQL
+- AI 服务：FastAPI、Python、AutoGen/OpenAI Compatible API
+- 数据库：MySQL 8.4（Docker Compose）
 
 ## 目录结构
 
 ```text
 .
-├── backend
-├── docker
-│   └── mysql
-├── docs
-│   └── requirements
-├── frontend
-├── scripts
-├── compose.yaml
-├── .env.example
+├── frontend/                  # Vue 3 前端
+├── backend/                   # Spring Boot 后端 + FastAPI AI 服务
+│   ├── src/main/java/         # Java API
+│   ├── src/main/python/       # FastAPI AI 服务
+│   └── src/test/              # Java / Python 测试
+├── docker/mysql/init/         # MySQL 初始化脚本
+├── scripts/                   # 启动和初始化脚本
+├── docs/                      # 需求、接口、设计文档
+├── compose.yaml               # MySQL 编排
+├── .env.example               # 环境变量模板
 └── README.md
 ```
 
-需求说明书位置：
+## 本地前置环境
 
-- `docs/requirements/需求规格说明书.md`
+建议使用以下环境：
 
-## 本机前置环境
-
-克隆后要能按文档启动，机器上至少需要具备：
-
-- `Docker Desktop` 29+，并确保 `docker compose` 可用
-- `Node.js` 24+ 与 `npm` 11+
+- `Docker Desktop`，并确保 `docker compose` 可用
+- `Node.js` 20+
+- `npm` 10+
 - `Java` 21
-- 可访问 `npm`、`Maven Central`、`Docker Hub` 的网络环境
+- `Python` 3.10+
 
-建议先自行确认：
+建议先检查：
 
 ```bash
 docker --version
@@ -45,36 +70,12 @@ docker compose version
 node -v
 npm -v
 java -version
+python3 --version
 ```
 
-如果网络环境受限，需要提前配置代理，否则可能在以下阶段失败：
+## 环境变量
 
-- `npm install`
-- `./mvnw spring-boot:run`
-- `docker compose up -d`
-
-## 克隆后先做什么
-
-### 1. 可选：先跑初始化脚本
-
-Mac / Linux:
-
-```bash
-./scripts/bootstrap.sh
-```
-
-Windows PowerShell:
-
-```powershell
-.\scripts\bootstrap.ps1
-```
-
-这个脚本会：
-
-- 自动复制 `.env.example` 为 `.env`（如果 `.env` 还不存在）
-- 安装前端依赖
-
-### 2. 复制环境变量模板
+首次启动前先复制模板：
 
 Mac / Linux:
 
@@ -88,45 +89,52 @@ Windows PowerShell:
 Copy-Item .env.example .env
 ```
 
-### 3. 修改 `.env` 中你本机需要调整的值
+常用配置项：
 
-最常改的配置：
+- `VITE_HOST` / `VITE_PORT`：前端开发服务器地址和端口
+- `VITE_API_PROXY_TARGET`：Vite 代理目标，默认指向 `http://127.0.0.1:8080`
+- `SERVER_PORT`：Spring Boot 端口
+- `MYSQL_PORT`：映射到宿主机的 MySQL 端口
+- `MYSQL_DATABASE` / `MYSQL_USER` / `MYSQL_PASSWORD` / `MYSQL_ROOT_PASSWORD`
+- `AI_SERVICE_HOST` / `AI_SERVICE_PORT`：FastAPI 服务监听地址
+- `AI_API_KEY`：真实 AI 能力所需，留空时 FastAPI 接口会返回 503
+- `AI_API_BASE_URL` / `AI_MODEL`：OpenAI Compatible API 配置
+- `JWT_SECRET` / `JWT_EXPIRE_MINUTES`
+- `VITE_MOCK_API=true`：前端 API 走本地 mock
+- `VITE_MOCK_AUTH=true`：登录注册走本地 mock
 
-- `MYSQL_PORT`: 如果你本机已经装了 MySQL 或 3306 被占用，改成别的端口，例如 `3307`
-- `MYSQL_ROOT_PASSWORD`: 建议改掉默认值
-- `SERVER_PORT`: 如果后端 8080 被占用，改成别的端口
-- `VITE_PORT`: 如果前端 5173 被占用，改成别的端口
-- `VITE_API_PROXY_TARGET`: 如果你改了后端端口，这里也要一起改，例如 `http://127.0.0.1:8081`
-- `DB_HOST`: 如果后端不是连本机 Docker MySQL，而是连别的数据库，在这里改
-- `DB_PORT` / `DB_NAME` / `DB_USER` / `DB_PASSWORD`: 默认先不要启用；只有后端要连一套单独的数据库时，才取消 `.env` 里的注释并填写
-- `CORS_ALLOWED_ORIGINS`: 如果有人把前端跑在别的端口，把对应地址追加到这里
+说明：
 
-### 4. 可选：复制后端本地覆盖配置
+- Spring Boot 会直接读取仓库根目录的 `.env`
+- 前端的 `vite.config.ts` 也会从仓库根目录加载 `.env`
+- 如只做前后端基础联调，不必配置 `AI_API_KEY`
 
-后端默认会从仓库根目录的 `.env` 读取数据库和端口配置。  
-如果你需要给 Spring Boot 单独覆盖配置，再复制下面这个模板：
+## 快速启动
+
+推荐启动顺序：数据库 -> Spring Boot -> 前端。
+
+如果你需要真实 AI 输出，再额外启动 FastAPI AI 服务并填写 `AI_API_KEY`。
+
+### 1. 初始化
 
 Mac / Linux:
 
 ```bash
-cp backend/src/main/resources/application-local.yml.example backend/src/main/resources/application-local.yml
+./scripts/bootstrap.sh
 ```
 
 Windows PowerShell:
 
 ```powershell
-Copy-Item backend/src/main/resources/application-local.yml.example backend/src/main/resources/application-local.yml
+.\scripts\bootstrap.ps1
 ```
 
-重点说明：
+这个步骤会：
 
-- 如果只是数据库端口冲突，优先改根目录 `.env` 里的 `MYSQL_PORT`
-- 在默认本地开发模式下，后端会自动跟随 `MYSQL_PORT` 连接 Docker MySQL，不需要额外改 `DB_PORT`
-- `application-local.yml` 主要用于后端单独覆盖，例如临时切换远程数据库、调整日志级别、单独改后端端口
+- 不存在 `.env` 时自动从 `.env.example` 复制
+- 安装前端依赖
 
-## 启动数据库
-
-也可以直接用脚本：
+### 2. 启动 MySQL
 
 Mac / Linux:
 
@@ -140,53 +148,14 @@ Windows PowerShell:
 .\scripts\start-db.ps1
 ```
 
-等价手动命令：
+或直接执行：
 
 ```bash
 docker compose up -d
-```
-
-查看状态：
-
-```bash
 docker compose ps
 ```
 
-停止数据库：
-
-```bash
-docker compose down
-```
-
-如果你需要连容器内 MySQL：
-
-```bash
-docker compose exec mysql mysql -u root -p
-```
-
-## 启动前端
-
-Mac / Linux:
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Windows PowerShell:
-
-```powershell
-Set-Location frontend
-npm install
-npm run dev
-```
-
-默认访问地址：
-
-- `http://127.0.0.1:5173`
-
-## 启动后端
+### 3. 启动 Spring Boot 后端
 
 Mac / Linux:
 
@@ -202,30 +171,208 @@ Set-Location backend
 .\mvnw.cmd spring-boot:run
 ```
 
-默认访问地址：
+健康检查：
 
 - `http://127.0.0.1:8080/api/health`
+- `http://127.0.0.1:8080/actuator/health`
 
-## 一键入口脚本
+### 4. 启动前端
 
-仓库提供了跨平台脚本入口：
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-- `scripts/bootstrap.sh`
-- `scripts/bootstrap.ps1`
-- `scripts/start-db.sh`
-- `scripts/start-db.ps1`
-- `scripts/start-dev.sh`
-- `scripts/start-dev.ps1`
+默认访问地址：
+
+- `http://127.0.0.1:5173`
+
+### 5. 可选：启动 FastAPI AI 服务
+
+Mac / Linux:
+
+```bash
+./scripts/start-ai.sh
+```
+
+Windows PowerShell:
+
+```powershell
+.\scripts\start-ai.ps1
+```
+
+这个脚本会：
+
+- 自动创建 `backend/.venv`
+- 安装 `backend/src/main/python/requirements.txt`
+- 按 `.env` 中的 `AI_SERVICE_HOST` / `AI_SERVICE_PORT` 启动 FastAPI
+
+默认地址：
+
+- `http://127.0.0.1:8000/health`
+- `http://127.0.0.1:8000/docs`
+
+## 运行模式说明
+
+### 模式 1：纯前端开发
+
+设置：
+
+```env
+VITE_MOCK_API=true
+VITE_MOCK_AUTH=true
+```
+
+此时只需要启动前端。
+
+### 模式 2：前后端联调，不接真实 AI
+
+设置：
+
+- 不开启 `VITE_MOCK_API`
+- 启动 MySQL、Spring Boot、前端
+- 可以不启动 FastAPI
+- 可以不填写 `AI_API_KEY`
+
+此时 AI 相关接口由 Spring Boot 调用失败后回退到内置 mock 结果，适合功能联调和页面演示。
+
+### 模式 3：完整联调，接真实 AI
+
+设置：
+
+- 启动 MySQL、Spring Boot、前端、FastAPI
+- 在 `.env` 中填写有效的 `AI_API_KEY`
+- 如需切换模型或供应商，调整 `AI_API_BASE_URL` 与 `AI_MODEL`
+
+## 已实现的主要页面
+
+前端当前已包含这些主路由：
+
+- `/login`：登录
+- `/register`：注册
+- `/home`：首页总览
+- `/health-data`：健康数据管理
+- `/health-trends`：健康趋势
+- `/ai-profile`：AI 健康画像
+- `/ai-plan`：AI 健康计划
+- `/knowledge`：健康知识与推送
+- `/reminders`：提醒管理
+- `/profile`：个人中心
+- `/admin/users`：管理员用户管理
+- `/admin/statistics`：管理员统计
+
+## 主要接口入口
+
+认证与用户：
+
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `GET /api/users/me`
+- `PUT /api/users/me`
+- `PUT /api/users/me/password`
+
+健康数据：
+
+- `POST /api/health-data`
+- `GET /api/health-data`
+- `POST /api/health-data/import`
+- `DELETE /api/health-data/{dataId}`
+- `GET /api/health-data/trends`
+
+AI 能力：
+
+- `POST /api/ai/profile`
+- `POST /api/ai/plan`
+- `POST /api/ai/knowledge-push`
+
+知识与提醒：
+
+- `GET /api/knowledge`
+- `GET /api/knowledge/pushes`
+- `PATCH /api/knowledge/pushes/{pushId}/read`
+- `GET /api/reminders`
+- `POST /api/reminders`
+- `PUT /api/reminders/{reminderId}`
+- `PATCH /api/reminders/{reminderId}/status`
+
+管理员：
+
+- `GET /api/admin/users`
+- `PATCH /api/admin/users/{userId}/status`
+- `GET /api/admin/login-logs`
+- `GET /api/admin/statistics`
+
+更详细的字段说明见 [docs/api/后端接口草案.md](/Users/ywmxp/Desktop/AI个性化私人健康管理系统/docs/api/后端接口草案.md)。
+
+### CSV 导入模板
+
+前端静态目录提供模板：
+
+- [frontend/public/health_data_template.csv](/Users/ywmxp/Desktop/AI个性化私人健康管理系统/frontend/public/health_data_template.csv)
+
+CSV 表头必须为：
+
+```text
+dataType,dataValue,unit,recordTime
+```
+
+`recordTime` 格式必须为：
+
+```text
+yyyy-MM-dd HH:mm:ss
+```
+
+支持的数据类型：
+
+- `BLOOD_PRESSURE`
+- `BLOOD_GLUCOSE`
+- `WEIGHT`
+- `EXERCISE_MINUTES`
+- `SLEEP_HOURS`
+
+## 测试
+
+Java 单元测试：
+
+```bash
+cd backend
+./mvnw test
+```
+
+Python 测试：
+
+```bash
+cd backend
+python3 -m venv .venv
+.venv/bin/pip install -r src/main/python/requirements.txt
+.venv/bin/pip install pytest
+.venv/bin/pytest src/test/python
+```
 
 说明：
 
-- `bootstrap.*` 负责准备 `.env` 和安装前端依赖
-- `start-db.*` 负责启动数据库
-- `start-dev.*` 负责提示完整启动顺序，并先启动数据库
-- 为了避免脚本在不同终端环境下行为不一致，`start-dev.*` 不自动创建多个终端窗口，而是明确打印后端和前端启动命令
+- Java 侧已有健康数据服务测试
+- Python 侧已有 FastAPI AI 接口测试
+- 当前根目录没有统一的一键测试脚本
 
-## 当前脚手架说明
+## 文档索引
 
-- 前端已经切换为项目首页占位，不再保留 Vite 演示页
-- 后端已经提供最小健康检查接口和开放式开发环境安全配置
-- 数据库目前只初始化容器和库连接约定，业务表结构后续再按模块推进
+需求与设计文档：
+
+- [docs/requirements/需求规格说明书（附图）.md](/Users/ywmxp/Desktop/AI个性化私人健康管理系统/docs/requirements/需求规格说明书（附图）.md)
+- [docs/requirements/软件体系结构设计文档.md](/Users/ywmxp/Desktop/AI个性化私人健康管理系统/docs/requirements/软件体系结构设计文档.md)
+- [docs/database/数据库设计草案.md](/Users/ywmxp/Desktop/AI个性化私人健康管理系统/docs/database/数据库设计草案.md)
+
+后端与 AI 说明：
+
+- [docs/api/后端接口草案.md](/Users/ywmxp/Desktop/AI个性化私人健康管理系统/docs/api/后端接口草案.md)
+- [docs/backend/登录注册后端实现说明.md](/Users/ywmxp/Desktop/AI个性化私人健康管理系统/docs/backend/登录注册后端实现说明.md)
+- [docs/backend/健康数据导入后端实现说明.md](/Users/ywmxp/Desktop/AI个性化私人健康管理系统/docs/backend/健康数据导入后端实现说明.md)
+- [docs/backend/人工智能模块.md](/Users/ywmxp/Desktop/AI个性化私人健康管理系统/docs/backend/人工智能模块.md)
+
+前端说明：
+
+- [frontend/README.md](/Users/ywmxp/Desktop/AI个性化私人健康管理系统/frontend/README.md)
+- [docs/frontend/个人信息管理前端实现说明.md](/Users/ywmxp/Desktop/AI个性化私人健康管理系统/docs/frontend/个人信息管理前端实现说明.md)
+- [docs/frontend/健康数据管理前端实现说明.md](/Users/ywmxp/Desktop/AI个性化私人健康管理系统/docs/frontend/健康数据管理前端实现说明.md)
