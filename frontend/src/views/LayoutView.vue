@@ -28,15 +28,19 @@ import ReminderPopup from '../components/reminder/ReminderPopup.vue'
   height: 100vh;
 }
 .el-aside {
-  background: #304156;
+  background: var(--c-sidebar);
+  width: 240px !important;
+  overflow: hidden;
 }
 .el-header {
-  background: #fff;
-  border-bottom: 1px solid #e6e6e6;
-  padding: 0 20px;
+  background: rgba(255,255,255,0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--c-border-light);
+  padding: 0 28px;
 }
 .el-main {
-  background: #f5f7fa;
-  padding: 20px;
+  background: var(--c-bg);
+  padding: 26px 30px;
 }
 </style>

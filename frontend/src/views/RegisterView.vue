@@ -1,67 +1,45 @@
 <template>
   <div class="register-container">
     <el-card class="register-card" shadow="hover">
-      <h2 class="register-title">用户注册</h2>
+      <h2 class="register-title">创建健康账户</h2>
+      <p class="register-subtitle">加入 AI 个性化健康管理</p>
+
       <el-form
         :model="registerForm"
         :rules="registerRules"
         ref="registerFormRef"
-        label-width="80px"
         class="register-form"
       >
-        <el-form-item label="手机号" prop="phone">
-          <el-input
-            v-model="registerForm.phone"
-            placeholder="请输入手机号"
-            clearable
-          />
+        <el-form-item prop="phone">
+          <label class="field-label">手机号</label>
+          <el-input v-model="registerForm.phone" placeholder="请输入手机号" clearable />
         </el-form-item>
 
-        <el-form-item label="用户名" prop="username">
-          <el-input
-            v-model="registerForm.username"
-            placeholder="请输入用户名"
-            clearable
-          />
+        <el-form-item prop="username">
+          <label class="field-label">用户名</label>
+          <el-input v-model="registerForm.username" placeholder="请输入用户名" clearable />
         </el-form-item>
 
-        <el-form-item label="密码" prop="password">
-          <el-input
-            v-model="registerForm.password"
-            type="password"
-            placeholder="请输入密码"
-            show-password
-            clearable
-          />
+        <el-form-item prop="password">
+          <label class="field-label">密码</label>
+          <el-input v-model="registerForm.password" type="password" placeholder="至少 6 位密码" show-password clearable />
         </el-form-item>
 
-        <el-form-item label="确认密码" prop="confirmPassword">
-          <el-input
-            v-model="registerForm.confirmPassword"
-            type="password"
-            placeholder="请再次输入密码"
-            show-password
-            clearable
-          />
+        <el-form-item prop="confirmPassword">
+          <label class="field-label">确认密码</label>
+          <el-input v-model="registerForm.confirmPassword" type="password" placeholder="请再次输入密码" show-password clearable />
         </el-form-item>
 
         <el-form-item>
-          <el-button
-            type="primary"
-            :loading="loading"
-            @click="handleRegister"
-            style="width: 100%; height: 40px; font-size: 16px"
-          >
-            注册
+          <el-button type="primary" :loading="loading" class="submit-btn" @click="handleRegister">
+            注 册
           </el-button>
         </el-form-item>
       </el-form>
 
       <div class="login-link">
         已有账号？
-        <el-link type="primary" @click="$router.push('/login')">
-          立即登录
-        </el-link>
+        <el-link type="primary" @click="$router.push('/login')">立即登录</el-link>
       </div>
     </el-card>
   </div>
@@ -137,34 +115,105 @@ async function handleRegister() {
 </script>
 
 <style scoped>
+/* ===== Background ===== */
 .register-container {
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: #f5f7fa;
+  background:
+    radial-gradient(ellipse 60% 50% at 80% 75%, rgba(13,115,119,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 40% at 20% 15%, rgba(232,93,74,0.04) 0%, transparent 40%),
+    linear-gradient(180deg, #FAF8F5 0%, #F5F0EB 100%);
 }
 
+/* ===== Card ===== */
 .register-card {
-  width: 450px;
-  padding: 20px;
-  border-radius: 12px;
+  width: 440px; padding: 0;
+  border-radius: var(--r-xl);
+  box-shadow: var(--s-modal);
+  border: 1px solid var(--c-border-light);
+  overflow: hidden;
+}
+.register-card::before {
+  content: ''; display: block; height: 3px;
+  background: linear-gradient(90deg, var(--c-primary), #14919B, var(--c-accent));
+}
+.register-card :deep(.el-card__body) {
+  padding: 40px 48px 32px;
 }
 
+/* ===== Title ===== */
 .register-title {
-  text-align: center;
-  margin-bottom: 35px;
-  color: #303133;
-  font-weight: 600;
+  text-align: center; margin-bottom: 4px;
+  color: var(--c-text);
+  font-family: var(--font-display);
+  font-weight: 600; font-size: 24px;
+}
+.register-subtitle {
+  text-align: center; margin-bottom: 28px;
+  color: var(--c-text-muted); font-size: 13px;
 }
 
-.register-form {
-  margin-bottom: 20px;
+/* ===== Form ===== */
+.register-form { margin-bottom: 4px; }
+
+.register-form :deep(.el-form-item__label) { display: none; }
+
+.field-label {
+  display: block; margin-bottom: 8px;
+  font-size: 13px; font-weight: 600;
+  color: var(--c-text-secondary);
+  font-family: var(--font-body);
 }
 
+.register-form :deep(.el-form-item) { margin-bottom: 18px; }
+.register-form :deep(.el-form-item:last-of-type) { margin-bottom: 0; }
+
+.register-form :deep(.el-input__wrapper) {
+  border-radius: var(--r-md);
+  padding: 2px 14px; height: 46px;
+  box-shadow: 0 0 0 1px var(--c-border) inset !important;
+  background: var(--c-bg);
+  transition: box-shadow var(--t-fast), background var(--t-fast);
+}
+.register-form :deep(.el-input__wrapper:hover) {
+  background: var(--c-surface);
+  box-shadow: 0 0 0 1px var(--c-primary) inset !important;
+}
+.register-form :deep(.el-input__wrapper.is-focus) {
+  background: var(--c-surface);
+  box-shadow: 0 0 0 2px rgba(13,115,119,0.25) inset !important;
+}
+.register-form :deep(.el-input__inner) {
+  font-size: 15px; color: var(--c-text);
+}
+.register-form :deep(.el-input__inner::placeholder) {
+  color: var(--c-text-muted);
+}
+
+/* Submit button */
+.submit-btn {
+  width: 100%; height: 48px !important;
+  font-size: 16px !important; font-weight: 600 !important;
+  letter-spacing: 0.08em;
+  font-family: var(--font-display);
+  border-radius: var(--r-md) !important;
+  background: linear-gradient(135deg, var(--c-primary), #14919B) !important;
+  border: none !important;
+  transition: all var(--t-normal) !important;
+  margin-top: 2px;
+}
+.submit-btn:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 8px 28px rgba(13,115,119,0.3) !important;
+}
+
+/* ===== Footer ===== */
 .login-link {
-  text-align: center;
-  color: #909399;
-  font-size: 14px;
+  text-align: center; color: var(--c-text-muted); font-size: 13px; margin-top: 22px;
+}
+.login-link :deep(.el-link) {
+  font-weight: 600; color: var(--c-primary);
 }
 </style>

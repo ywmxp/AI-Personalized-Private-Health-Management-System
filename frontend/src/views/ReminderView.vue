@@ -3,6 +3,7 @@
     <div class="page-header">
       <h2>⏰ 健康提醒设置</h2>
       <p class="subtitle">设置定时提醒，帮助您养成健康生活习惯</p>
+      <p class="page-motto">好的习惯，从被提醒开始</p>
     </div>
 
     <!-- 提醒类型提示 -->
@@ -185,12 +186,14 @@ async function handleSave() {
 // ============ 开关 ============
 async function handleToggle(row: Reminder, val: boolean) {
   const newStatus = val ? 1 : 0
+  const prevStatus = row.status
+  // 乐观更新：先改 UI，后端失败再回退
+  row.status = newStatus
   try {
     await toggleReminderStatus(row.reminderId, newStatus)
-    row.status = newStatus
     ElMessage.success(val ? '提醒已开启' : '提醒已关闭')
   } catch {
-    // handled
+    row.status = prevStatus
   }
 }
 
@@ -228,22 +231,15 @@ onMounted(fetchReminders)
   margin: 0 auto;
 }
 
-.page-header {
-  margin-bottom: 24px;
-}
+.page-header { margin-bottom: 24px; }
 .page-header h2 {
-  margin: 0 0 8px;
-  font-size: 24px;
-  color: #303133;
+  margin: 0 0 6px; font-size: 24px; color: var(--c-text);
+  font-family: var(--font-display);
 }
-.subtitle {
-  color: #909399;
-  margin: 0;
-}
+.subtitle { color: var(--c-text-muted); margin: 0; font-size: 13px; }
 
-.add-card {
-  margin-bottom: 20px;
-}
+.add-card { margin-bottom: 20px; border-radius: var(--r-lg); border: 1px solid var(--c-border-light); }
+.list-card { border-radius: var(--r-lg); border: 1px solid var(--c-border-light); }
 .add-form {
   display: flex;
   align-items: flex-end;

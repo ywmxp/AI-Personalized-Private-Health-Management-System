@@ -3,6 +3,7 @@
     <div class="page-header">
       <h2>🧬 AI 健康画像</h2>
       <p class="subtitle">基于您的健康数据，AI 为您生成个性化健康画像</p>
+      <p class="page-motto">读懂身体，是爱自己的开始</p>
     </div>
 
     <!-- 操作区 -->
@@ -18,6 +19,9 @@
         </div>
         <el-button type="primary" :loading="generating" @click="handleGenerate" :icon="MagicStick">
           生成健康画像
+        </el-button>
+        <el-button v-if="profileData" @click="handlePrint" :icon="Printer">
+          导出 PDF 报告
         </el-button>
       </div>
     </el-card>
@@ -107,7 +111,9 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import { MagicStick, WarningFilled } from '@element-plus/icons-vue'
+import { MagicStick, WarningFilled, Printer } from '@element-plus/icons-vue'
+
+function handlePrint() { window.print() }
 import { generateProfile } from '../api/ai'
 import LoadingSpinner from '../components/common/LoadingSpinner.vue'
 import EmptyState from '../components/common/EmptyState.vue'
@@ -167,18 +173,12 @@ async function handleGenerate() {
   margin: 0 auto;
 }
 
-.page-header {
-  margin-bottom: 24px;
-}
+.page-header { margin-bottom: 24px; }
 .page-header h2 {
-  margin: 0 0 8px;
-  font-size: 24px;
-  color: #303133;
+  margin: 0 0 6px; font-size: 24px; color: var(--c-text);
+  font-family: var(--font-display);
 }
-.subtitle {
-  color: #909399;
-  margin: 0;
-}
+.subtitle { color: var(--c-text-muted); margin: 0; font-size: 13px; }
 
 .action-card {
   margin-bottom: 24px;
@@ -316,5 +316,12 @@ async function handleGenerate() {
   border-radius: 6px;
   color: #b88230;
   font-size: 13px;
+}
+
+@media print {
+  .action-card, .el-aside, .el-header, .page-motto, .subtitle, button { display: none !important; }
+  .el-main { padding: 0 !important; }
+  .ai-profile-page { max-width: 100% !important; }
+  .el-card { box-shadow: none !important; border: 1px solid #ddd !important; break-inside: avoid; }
 }
 </style>
