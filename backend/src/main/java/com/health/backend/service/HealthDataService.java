@@ -42,12 +42,14 @@ public class HealthDataService {
     /** 录入健康数据 */
     @Transactional
     public HealthData create(Long userId, String dataType, String dataValue, String unit, LocalDateTime recordTime) {
+        HealthDataValidator.ValidatedHealthData validated =
+            HealthDataValidator.validateForCreate(dataType, dataValue, unit, recordTime);
         HealthData data = new HealthData();
         data.setUserId(userId);
-        data.setDataType(dataType);
-        data.setDataValue(dataValue);
-        data.setUnit(unit);
-        data.setRecordTime(recordTime != null ? recordTime : LocalDateTime.now());
+        data.setDataType(validated.dataType());
+        data.setDataValue(validated.dataValue());
+        data.setUnit(validated.unit());
+        data.setRecordTime(validated.recordTime());
         return healthDataRepository.save(data);
     }
 
@@ -152,7 +154,7 @@ public class HealthDataService {
     private HealthData parseCsvRecord(Long userId, String line, int lineNumber) {
         List<String> columns = parseCsvLine(line);
         if (columns.size() != CSV_HEADER.size()) {
-            throw csvLineError(lineNumber, "列数必须为4");
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, "第" + lineNumber + "行：列数必须为4");
         }
 
         String dataType = columns.get(0).trim();
@@ -160,29 +162,25 @@ public class HealthDataService {
         String unit = columns.get(2).trim();
         String recordTimeText = columns.get(3).trim();
 
-        if (dataType.isEmpty()) {
-            throw csvLineError(lineNumber, "dataType不能为空");
-        }
-        if (dataValue.isEmpty()) {
-            throw csvLineError(lineNumber, "dataValue不能为空");
-        }
-        if (recordTimeText.isEmpty()) {
-            throw csvLineError(lineNumber, "recordTime不能为空");
-        }
-
         LocalDateTime recordTime;
         try {
             recordTime = LocalDateTime.parse(recordTimeText, DT_FMT);
         } catch (DateTimeParseException e) {
-            throw csvLineError(lineNumber, "recordTime格式必须为yyyy-MM-dd HH:mm:ss");
+            throw new BusinessException(
+                ErrorCode.VALIDATION_ERROR,
+                "第" + lineNumber + "行：recordTime格式必须为yyyy-MM-dd HH:mm:ss"
+            );
         }
+
+        HealthDataValidator.ValidatedHealthData validated =
+            HealthDataValidator.validateForCsv(dataType, dataValue, unit, recordTime, lineNumber);
 
         HealthData data = new HealthData();
         data.setUserId(userId);
-        data.setDataType(dataType);
-        data.setDataValue(dataValue);
-        data.setUnit(unit.isEmpty() ? null : unit);
-        data.setRecordTime(recordTime);
+        data.setDataType(validated.dataType());
+        data.setDataValue(validated.dataValue());
+        data.setUnit(validated.unit());
+        data.setRecordTime(validated.recordTime());
         return data;
     }
 
@@ -195,9 +193,5 @@ public class HealthDataService {
             return line.substring(1);
         }
         return line;
-    }
-
-    private BusinessException csvLineError(int lineNumber, String message) {
-        return new BusinessException(ErrorCode.VALIDATION_ERROR, "第" + lineNumber + "行：" + message);
     }
 }
