@@ -1,7 +1,9 @@
 package com.health.backend.exception;
 
+import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -10,6 +12,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.health.backend.dto.ApiResponse;
 
 @RestControllerAdvice
@@ -38,6 +41,23 @@ public class GlobalExceptionHandler {
             .body(ApiResponse.failure(ErrorCode.VALIDATION_ERROR, message));
     }
 
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    ResponseEntity<ApiResponse<Void>> handleHttpMessageNotReadableException(HttpMessageNotReadableException exception) {
+        String message = "请求体格式错误";
+
+        Throwable cause = exception.getCause();
+        if (cause instanceof InvalidFormatException invalidFormatException) {
+            String field = extractLastFieldName(invalidFormatException.getPath());
+            message = switch (field) {
+                case "recordTime" -> "recordTime: 格式必须为yyyy-MM-dd HH:mm:ss";
+                default -> field + ": 格式不正确";
+            };
+        }
+
+        return ResponseEntity.badRequest()
+            .body(ApiResponse.failure(ErrorCode.VALIDATION_ERROR, message));
+    }
+
     @ExceptionHandler(AuthenticationException.class)
     ResponseEntity<ApiResponse<Void>> handleAuthenticationException(AuthenticationException exception) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -54,5 +74,16 @@ public class GlobalExceptionHandler {
     ResponseEntity<ApiResponse<Void>> handleException(Exception exception) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(ApiResponse.failure(ErrorCode.SERVER_ERROR, "系统异常，请稍后重试"));
+    }
+
+    private String extractLastFieldName(List<com.fasterxml.jackson.databind.JsonMappingException.Reference> path) {
+        if (path == null || path.isEmpty()) {
+            return "字段";
+        }
+        return path.stream()
+            .map(com.fasterxml.jackson.databind.JsonMappingException.Reference::getFieldName)
+            .filter(field -> field != null && !field.isBlank())
+            .reduce((first, second) -> second)
+            .orElse("字段");
     }
 }

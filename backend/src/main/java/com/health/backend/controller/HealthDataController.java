@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.health.backend.domain.HealthData;
 import com.health.backend.dto.ApiResponse;
 import com.health.backend.dto.PageResponse;
@@ -88,5 +89,10 @@ public class HealthDataController {
     }
 
     /** 录入请求体 */
-    record CreateRequest(String dataType, String dataValue, String unit, LocalDateTime recordTime) {}
+    record CreateRequest(
+        String dataType,
+        String dataValue,
+        String unit,
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime recordTime
+    ) {}
 }
