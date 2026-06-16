@@ -180,6 +180,14 @@ async function handleSubmit() {
     ElMessage.warning('请完善数据信息')
     return
   }
+  // 非血压类型不允许负数
+  if (form.dataType !== 'BLOOD_PRESSURE') {
+    const val = parseFloat(form.dataValue)
+    if (isNaN(val) || val < 0) {
+      ElMessage.warning('请输入有效的非负数值')
+      return
+    }
+  }
   submitting.value = true
   try {
     syncBpToForm()
@@ -187,9 +195,10 @@ async function handleSubmit() {
       dataType: form.dataType,
       dataValue: String(form.dataValue),
       unit: dataUnit.value,
+      recordTime: form.recordTime,
     })
     ElMessage.success('数据录入成功')
-    form.dataValue = '70.5'
+    form.dataValue = ''
     form.recordTime = now()
     await fetchRecords()
   } catch {
@@ -308,6 +317,36 @@ onMounted(fetchRecords)
   border-radius: var(--r-md);
   box-shadow: 0 0 0 1px var(--c-border) inset !important;
   background: var(--c-bg);
+}
+.form-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.form-item label {
+  font-size: 13px;
+  color: #606266;
+}
+.unit-text {
+  padding-top: 6px;
+  font-size: 14px;
+  color: #909399;
+  display: inline-block;
+  min-width: 50px;
+}
+.bp-inputs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.bp-slash {
+  font-size: 18px;
+  font-weight: 600;
+  color: #606266;
+}
+.form-actions {
+  display: flex;
+  gap: 12px;
 }
 :deep(.el-select .el-input__wrapper:hover),
 :deep(.el-input-number .el-input__wrapper:hover) {

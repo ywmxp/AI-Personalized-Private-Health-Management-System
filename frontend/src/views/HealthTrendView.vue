@@ -119,10 +119,10 @@
       <h4 style="margin: 0 0 16px; color: #303133">📊 数据明细</h4>
       <el-table :data="trendData.points" stripe size="small" max-height="300">
         <el-table-column prop="date" label="日期" width="150" />
-        <el-table-column label="数值" width="160">
-          <template #default="{ row }">{{ row.value }} {{ dataTypeUnit }}</template>
+        <el-table-column :label="'数值 (' + dataTypeUnit + ')'" width="180">
+          <template #default="{ row }">{{ row.value }}</template>
         </el-table-column>
-        <el-table-column label="与均值差值" min-width="140">
+        <el-table-column :label="'与均值差值 (' + dataTypeUnit + ')'" min-width="160">
           <template #default="{ row }">
             <span :style="{ color: diffColor((parseValues(row.value)[0]) - avgNumeric), fontWeight: '600' }">
               {{ isBP ? diffBPText(row.value, avgNumeric) : diffText(parseValues(row.value)[0] - avgNumeric) }}
@@ -620,7 +620,7 @@ function handleExportPDF() {
 
   <div class="section">
     <h3>数据明细</h3>
-    <table><thead><tr><th>日期</th><th>数值</th><th>与均值差值</th></tr></thead><tbody>${rows}</tbody></table>
+    <table><thead><tr><th>日期</th><th>数值 (${dataTypeUnit.value})</th><th>与均值差值 (${dataTypeUnit.value})</th></tr></thead><tbody>${rows}</tbody></table>
   </div>
 
   <div class="footer">AI 个性化私人健康管理系统 · 自动生成报告</div>

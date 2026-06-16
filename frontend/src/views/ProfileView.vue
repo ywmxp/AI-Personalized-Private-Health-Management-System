@@ -415,4 +415,7 @@ onMounted(async () => {
   display: flex; justify-content: flex-end;
   margin-top: 8px;
 }
+.password-card {
+  margin-top: 20px;
+}
 </style>
