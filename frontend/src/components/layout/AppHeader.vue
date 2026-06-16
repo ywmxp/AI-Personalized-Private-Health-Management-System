@@ -29,16 +29,18 @@ function handleLogout() {
   height: 100%;
 }
 .title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #303133;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--c-text);
+  letter-spacing: -0.005em;
 }
 .user-area {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }
 .username {
-  color: #606266;
+  font-size: 13px;
+  color: var(--c-text-secondary);
 }
 </style>

@@ -44,8 +44,8 @@ const _mockHealthItems = [
 export function getMockHealthRecords() {
   return { items: _mockHealthItems, page: 1, size: 10, total: _mockHealthItems.length }
 }
-export function addMockHealthRecord(item: { dataType: string; dataValue: string; unit: string }) {
-  const r = { dataId: ++_healthId, userId: 1, ...item, recordTime: new Date().toISOString().replace('T', ' ').slice(0, 19) }
+export function addMockHealthRecord(item: { dataType: string; dataValue: string; unit: string; recordTime?: string }) {
+  const r = { dataId: ++_healthId, userId: 1, ...item, recordTime: item.recordTime || new Date().toISOString().replace('T', ' ').slice(0, 19) }
   _mockHealthItems.unshift(r)
   return r
 }

@@ -12,7 +12,7 @@ export async function getHealthRecords(_params?: { dataType?: string; startTime?
 }
 
 /** 上传健康数据 */
-export async function uploadHealthData(data: { dataType: string; dataValue: string; unit: string }) {
+export async function uploadHealthData(data: { dataType: string; dataValue: string; unit: string; recordTime: string }) {
   if (isMockEnabled()) return mockSuccess(addMockHealthRecord(data) as unknown as HealthRecord)
   return request.post<ApiResponse<HealthRecord>>('/api/health-data', data)
 }

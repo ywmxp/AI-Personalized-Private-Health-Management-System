@@ -3,6 +3,7 @@
     <div class="page-header">
       <h2>💪 健康数据管理</h2>
       <p class="subtitle">记录和管理您的日常健康指标</p>
+      <p class="page-motto">每个数字，都是对自己的一份承诺</p>
     </div>
 
     <!-- 数据录入卡片 -->
@@ -179,6 +180,14 @@ async function handleSubmit() {
     ElMessage.warning('请完善数据信息')
     return
   }
+  // 非血压类型不允许负数
+  if (form.dataType !== 'BLOOD_PRESSURE') {
+    const val = parseFloat(form.dataValue)
+    if (isNaN(val) || val < 0) {
+      ElMessage.warning('请输入有效的非负数值')
+      return
+    }
+  }
   submitting.value = true
   try {
     syncBpToForm()
@@ -186,9 +195,10 @@ async function handleSubmit() {
       dataType: form.dataType,
       dataValue: String(form.dataValue),
       unit: dataUnit.value,
+      recordTime: form.recordTime,
     })
     ElMessage.success('数据录入成功')
-    form.dataValue = '70.5'
+    form.dataValue = ''
     form.recordTime = now()
     await fetchRecords()
   } catch {
@@ -270,37 +280,43 @@ onMounted(fetchRecords)
 </script>
 
 <style scoped>
-.health-data-page {
-  max-width: 960px;
-  margin: 0 auto;
-}
+.health-data-page { max-width: 960px; margin: 0 auto; }
 
-.page-header {
-  margin-bottom: 24px;
-}
+.page-header { margin-bottom: 24px; }
 .page-header h2 {
-  margin: 0 0 8px;
-  font-size: 24px;
-  color: #303133;
+  margin: 0 0 6px; font-size: 24px; color: var(--c-text);
+  font-family: var(--font-display);
 }
-.subtitle {
-  color: #909399;
-  margin: 0;
+.subtitle { color: var(--c-text-muted); margin: 0; font-size: 13px; }
+.page-motto {
+  margin-top: 8px; font-size: 13px; font-style: italic;
+  color: var(--c-text-muted); opacity: 0.7;
+  font-family: var(--font-display);
 }
 
-.input-card {
+.input-card, .list-card {
+  border-radius: var(--r-lg); border: 1px solid var(--c-border-light);
   margin-bottom: 20px;
 }
-.input-card h4 {
-  margin: 0 0 16px;
-  color: #303133;
+.input-card :deep(.el-card__body),
+.list-card :deep(.el-card__body) { padding: 22px 24px; }
+
+.input-card h4, .list-header h4 {
+  margin: 0 0 14px; color: var(--c-text); font-size: 15px; font-weight: 600;
 }
-.form-row {
-  display: flex;
-  align-items: flex-end;
-  gap: 16px;
-  flex-wrap: wrap;
-  margin-bottom: 16px;
+.form-row { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+.form-item { display: flex; flex-direction: column; gap: 5px; }
+.form-item label { font-size: 12px; color: var(--c-text-secondary); font-weight: 500; }
+.unit-text { padding-top: 6px; font-size: 14px; color: var(--c-text-muted); display: inline-block; min-width: 50px; }
+.form-actions { display: flex; gap: 12px; }
+
+/* Input overrides */
+:deep(.el-select .el-input__wrapper),
+:deep(.el-input-number .el-input__wrapper),
+:deep(.el-date-picker .el-input__wrapper) {
+  border-radius: var(--r-md);
+  box-shadow: 0 0 0 1px var(--c-border) inset !important;
+  background: var(--c-bg);
 }
 .form-item {
   display: flex;
@@ -332,27 +348,34 @@ onMounted(fetchRecords)
   display: flex;
   gap: 12px;
 }
+:deep(.el-select .el-input__wrapper:hover),
+:deep(.el-input-number .el-input__wrapper:hover) {
+  box-shadow: 0 0 0 1px var(--c-primary) inset !important;
+}
 
-.list-card h4 {
-  margin: 0 0 16px;
-  color: #303133;
+.list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.list-header h4 { margin: 0; }
+
+/* Table polish */
+:deep(.el-table) { border-radius: var(--r-md); overflow: hidden; }
+:deep(.el-table th.el-table__cell) {
+  background: var(--c-bg); color: var(--c-text-secondary);
+  font-weight: 600; font-size: 12px; letter-spacing: 0.02em;
+  border-bottom: 2px solid var(--c-border);
 }
-.list-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
+:deep(.el-table td.el-table__cell) {
+  border-bottom: 1px solid var(--c-border-light);
 }
-.list-header h4 {
-  margin: 0;
+:deep(.el-table .el-table__row:hover > td) {
+  background: var(--c-primary-light);
 }
-.value-text {
-  font-weight: 600;
-  color: #409eff;
+:deep(.el-table__body tr:last-child td) {
+  border-bottom: none;
 }
-.pagination-wrapper {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 20px;
-}
+
+.value-text { font-weight: 600; color: var(--c-primary); font-size: 15px; font-family: var(--font-display); }
+.pagination-wrapper { display: flex; justify-content: flex-end; margin-top: 18px; }
+
+/* Data type tag colors */
+:deep(.el-tag) { border-radius: var(--r-sm); font-weight: 500; }
 </style>

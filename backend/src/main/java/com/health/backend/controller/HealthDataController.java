@@ -12,7 +12,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.health.backend.domain.HealthData;
 import com.health.backend.dto.ApiResponse;
 import com.health.backend.dto.PageResponse;
@@ -54,6 +56,16 @@ public class HealthDataController {
             currentUser.userId(), dataType, startTime, endTime, page, size));
     }
 
+    /** 批量导入健康数据 CSV */
+    @PostMapping("/import")
+    public ApiResponse<Map<String, Integer>> importCsv(
+        @AuthenticationPrincipal JwtUser currentUser,
+        @RequestParam(value = "file", required = false) MultipartFile file
+    ) {
+        int importedCount = healthDataService.importCsv(currentUser.userId(), file);
+        return ApiResponse.success(Map.of("importedCount", importedCount));
+    }
+
     /** 删除健康数据 */
     @DeleteMapping("/{dataId}")
     public ApiResponse<Void> delete(
@@ -77,5 +89,10 @@ public class HealthDataController {
     }
 
     /** 录入请求体 */
-    record CreateRequest(String dataType, String dataValue, String unit, LocalDateTime recordTime) {}
+    record CreateRequest(
+        String dataType,
+        String dataValue,
+        String unit,
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime recordTime
+    ) {}
 }

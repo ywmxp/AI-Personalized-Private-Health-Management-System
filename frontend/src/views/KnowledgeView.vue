@@ -3,6 +3,7 @@
     <div class="page-header">
       <h2>📚 健康知识</h2>
       <p class="subtitle">AI 根据您的健康状况推送个性化健康知识</p>
+      <p class="page-motto">知识是健康的第一道防线</p>
     </div>
 
     <!-- Tab 切换 -->
@@ -317,18 +318,12 @@ onMounted(() => {
   margin: 0 auto;
 }
 
-.page-header {
-  margin-bottom: 24px;
-}
+.page-header { margin-bottom: 24px; }
 .page-header h2 {
-  margin: 0 0 8px;
-  font-size: 24px;
-  color: #303133;
+  margin: 0 0 6px; font-size: 24px; color: var(--c-text);
+  font-family: var(--font-display);
 }
-.subtitle {
-  color: #909399;
-  margin: 0;
-}
+.subtitle { color: var(--c-text-muted); margin: 0; font-size: 13px; }
 
 /* 知识列表 */
 .knowledge-list {
