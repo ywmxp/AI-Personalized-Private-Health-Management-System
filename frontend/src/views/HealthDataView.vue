@@ -31,7 +31,7 @@
                 <el-input v-model="bpDiastolic" placeholder="舒张压" style="width: 80px" />
               </div>
             </template>
-            <el-input v-else v-model="form.dataValue" placeholder="如 70.5" style="width: 160px" />
+            <el-input v-else v-model="form.dataValue" placeholder="输入数值" style="width: 160px" />
           </div>
           <div class="form-item">
             <label>单位</label>
@@ -98,7 +98,7 @@
         </el-table-column>
         <el-table-column label="记录时间" min-width="160">
           <template #default="{ row }">
-            {{ row.recordTime }}
+            {{ formatDateTime(row.recordTime) }}
           </template>
         </el-table-column>
         <el-table-column label="操作" width="100" align="center">
@@ -140,14 +140,14 @@
             <div class="compare-row"><span>类型</span><strong>{{ dataTypeLabel(pendingConflict.existingRecord.dataType) }}</strong></div>
             <div class="compare-row"><span>数值</span><strong>{{ pendingConflict.existingRecord.dataValue }}</strong></div>
             <div class="compare-row"><span>单位</span><strong>{{ pendingConflict.existingRecord.unit }}</strong></div>
-            <div class="compare-row"><span>时间</span><strong>{{ pendingConflict.existingRecord.recordTime }}</strong></div>
+            <div class="compare-row"><span>时间</span><strong>{{ formatDateTime(pendingConflict.existingRecord.recordTime) }}</strong></div>
           </div>
           <div class="compare-card compare-card--incoming">
             <h5>当前录入</h5>
             <div class="compare-row"><span>类型</span><strong>{{ dataTypeLabel(pendingConflict.incomingRecord.dataType) }}</strong></div>
             <div class="compare-row"><span>数值</span><strong>{{ pendingConflict.incomingRecord.dataValue }}</strong></div>
             <div class="compare-row"><span>单位</span><strong>{{ pendingConflict.incomingRecord.unit }}</strong></div>
-            <div class="compare-row"><span>时间</span><strong>{{ pendingConflict.incomingRecord.recordTime }}</strong></div>
+            <div class="compare-row"><span>时间</span><strong>{{ formatDateTime(pendingConflict.incomingRecord.recordTime) }}</strong></div>
           </div>
         </div>
       </div>
@@ -175,7 +175,7 @@
               <div class="import-preview-cell">
                 <strong>{{ dataTypeLabel(row.existingRecord.dataType) }}</strong>
                 <span>{{ row.existingRecord.dataValue }} {{ row.existingRecord.unit }}</span>
-                <span>{{ row.existingRecord.recordTime }}</span>
+                <span>{{ formatDateTime(row.existingRecord.recordTime) }}</span>
               </div>
             </template>
           </el-table-column>
@@ -184,7 +184,7 @@
               <div class="import-preview-cell">
                 <strong>{{ dataTypeLabel(row.incomingRecord.dataType) }}</strong>
                 <span>{{ row.incomingRecord.dataValue }} {{ row.incomingRecord.unit }}</span>
-                <span>{{ row.incomingRecord.recordTime }}</span>
+                <span>{{ formatDateTime(row.incomingRecord.recordTime) }}</span>
               </div>
             </template>
           </el-table-column>
@@ -207,7 +207,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Upload, Delete, Download } from '@element-plus/icons-vue'
 import { getHealthRecords, uploadHealthData, deleteHealthData, importHealthData } from '../api/health'
@@ -222,12 +222,18 @@ import type {
 // ============ 表单 ============
 const now = () => {
   const d = new Date()
-  return d.toISOString().replace('T', ' ').slice(0, 19)
+  d.setSeconds(0, 0)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  const hours = String(d.getHours()).padStart(2, '0')
+  const minutes = String(d.getMinutes()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hours}:${minutes}:00`
 }
 
 const form = reactive({
   dataType: 'WEIGHT',
-  dataValue: '70.5',
+  dataValue: '',
   recordTime: now(),
 })
 
@@ -241,8 +247,19 @@ const dataUnits: Record<string, string> = {
 const dataUnit = computed(() => dataUnits[form.dataType] || '')
 
 // 血压双输入框
-const bpSystolic = ref('120')
-const bpDiastolic = ref('80')
+const bpSystolic = ref('')
+const bpDiastolic = ref('')
+
+watch(() => form.dataType, (nextType, prevType) => {
+  if (nextType === prevType) {
+    return
+  }
+  form.dataValue = ''
+  if (nextType === 'BLOOD_PRESSURE') {
+    bpSystolic.value = ''
+    bpDiastolic.value = ''
+  }
+})
 
 const submitting = ref(false)
 const overwriteSubmitting = ref(false)
@@ -264,9 +281,17 @@ async function handleSubmit() {
 }
 
 function buildSubmitPayload(overwrite = false): HealthDataCreateRequest | null {
-  const dataValue = form.dataType === 'BLOOD_PRESSURE'
-    ? `${bpSystolic.value.trim()}/${bpDiastolic.value.trim()}`
-    : form.dataValue.trim()
+  let dataValue = form.dataValue.trim()
+
+  if (form.dataType === 'BLOOD_PRESSURE') {
+    const systolic = bpSystolic.value.trim()
+    const diastolic = bpDiastolic.value.trim()
+    if (!systolic || !diastolic) {
+      ElMessage.warning('请完善血压数值')
+      return null
+    }
+    dataValue = `${systolic}/${diastolic}`
+  }
 
   if (!form.dataType || !dataValue) {
     ElMessage.warning('请完善数据信息')
@@ -294,7 +319,6 @@ async function submitHealthData(payload: HealthDataCreateRequest): Promise<boole
   try {
     await uploadHealthData(payload)
     ElMessage.success(payload.overwrite ? '数据已覆盖' : '数据录入成功')
-    resetForm()
     await fetchRecords()
     return true
   } catch (error) {
@@ -305,15 +329,6 @@ async function submitHealthData(payload: HealthDataCreateRequest): Promise<boole
       return false
     }
     return false
-  }
-}
-
-function resetForm() {
-  form.dataValue = ''
-  form.recordTime = now()
-  if (form.dataType === 'BLOOD_PRESSURE') {
-    bpSystolic.value = '120'
-    bpDiastolic.value = '80'
   }
 }
 
@@ -448,6 +463,10 @@ const typeLabels: Record<string, string> = {
 }
 function dataTypeLabel(type: string) {
   return typeLabels[type] || type
+}
+
+function formatDateTime(value?: string) {
+  return value?.replace('T', ' ') || ''
 }
 
 onMounted(fetchRecords)

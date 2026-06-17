@@ -2,6 +2,8 @@ package com.health.backend.domain;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -33,6 +35,7 @@ public class HealthData {
     private String unit;
 
     @Column(name = "record_time", nullable = false)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime recordTime;
 
     @Column(name = "create_time", nullable = false)
