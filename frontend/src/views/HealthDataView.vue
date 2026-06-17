@@ -176,6 +176,7 @@ function syncBpToForm() {
 const submitting = ref(false)
 
 async function handleSubmit() {
+  syncBpToForm()
   if (!form.dataType || !form.dataValue.trim()) {
     ElMessage.warning('请完善数据信息')
     return
@@ -190,7 +191,6 @@ async function handleSubmit() {
   }
   submitting.value = true
   try {
-    syncBpToForm()
     await uploadHealthData({
       dataType: form.dataType,
       dataValue: String(form.dataValue),
