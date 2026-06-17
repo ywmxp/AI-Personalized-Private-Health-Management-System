@@ -17,6 +17,8 @@ import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.health.backend.domain.HealthData;
 import com.health.backend.dto.ApiResponse;
+import com.health.backend.dto.HealthDataImportDuplicateAction;
+import com.health.backend.dto.HealthDataImportResult;
 import com.health.backend.dto.PageResponse;
 import com.health.backend.security.JwtUser;
 import com.health.backend.service.HealthDataService;
@@ -38,7 +40,7 @@ public class HealthDataController {
         @RequestBody CreateRequest req
     ) {
         HealthData data = healthDataService.create(
-            currentUser.userId(), req.dataType, req.dataValue, req.unit, req.recordTime);
+            currentUser.userId(), req.dataType, req.dataValue, req.unit, req.recordTime, req.isOverwrite());
         return ApiResponse.success(Map.of("dataId", data.getDataId()));
     }
 
@@ -58,12 +60,13 @@ public class HealthDataController {
 
     /** 批量导入健康数据 CSV */
     @PostMapping("/import")
-    public ApiResponse<Map<String, Integer>> importCsv(
+    public ApiResponse<HealthDataImportResult> importCsv(
         @AuthenticationPrincipal JwtUser currentUser,
-        @RequestParam(value = "file", required = false) MultipartFile file
+        @RequestParam(value = "file", required = false) MultipartFile file,
+        @RequestParam(required = false) HealthDataImportDuplicateAction duplicateAction
     ) {
-        int importedCount = healthDataService.importCsv(currentUser.userId(), file);
-        return ApiResponse.success(Map.of("importedCount", importedCount));
+        return ApiResponse.success(
+            healthDataService.importCsv(currentUser.userId(), file, duplicateAction));
     }
 
     /** 删除健康数据 */
@@ -93,6 +96,11 @@ public class HealthDataController {
         String dataType,
         String dataValue,
         String unit,
-        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime recordTime
-    ) {}
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime recordTime,
+        Boolean overwrite
+    ) {
+        boolean isOverwrite() {
+            return Boolean.TRUE.equals(overwrite);
+        }
+    }
 }

@@ -8,6 +8,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
 @Entity
@@ -49,6 +50,11 @@ public class HealthData {
         if (updateTime == null) {
             updateTime = now;
         }
+    }
+
+    @PreUpdate
+    void preUpdate() {
+        updateTime = LocalDateTime.now();
     }
 
     public Long getDataId() { return dataId; }

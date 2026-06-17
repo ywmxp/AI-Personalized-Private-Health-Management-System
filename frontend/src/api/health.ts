@@ -1,6 +1,11 @@
 import request from './request'
 import { isMockEnabled, mockSuccess, getMockHealthRecords, addMockHealthRecord, deleteMockHealthRecord, mockTrends } from './mock'
-import type { ApiResponse, HealthRecord } from '../types'
+import type {
+  ApiResponse,
+  HealthDataCreateRequest,
+  HealthDataImportResult,
+  HealthRecord,
+} from '../types'
 
 /** 获取健康数据列表 */
 export async function getHealthRecords(_params?: { dataType?: string; startTime?: string; endTime?: string; page?: number; size?: number }) {
@@ -12,7 +17,7 @@ export async function getHealthRecords(_params?: { dataType?: string; startTime?
 }
 
 /** 上传健康数据 */
-export async function uploadHealthData(data: { dataType: string; dataValue: string; unit: string; recordTime: string }) {
+export async function uploadHealthData(data: HealthDataCreateRequest) {
   if (isMockEnabled()) return mockSuccess(addMockHealthRecord(data) as unknown as HealthRecord)
   return request.post<ApiResponse<HealthRecord>>('/api/health-data', data)
 }
@@ -30,11 +35,12 @@ export async function getHealthTrends(_params: { dataType: string; startTime: st
 }
 
 /** 批量导入健康数据 */
-export async function importHealthData(_file: File) {
-  if (isMockEnabled()) return mockSuccess({ importedCount: 5 })
+export async function importHealthData(_file: File, duplicateAction?: 'OVERWRITE' | 'SKIP') {
+  if (isMockEnabled()) return mockSuccess({ importedCount: 5, overwrittenCount: 0, skippedDuplicateCount: 0 })
   const formData = new FormData()
   formData.append('file', _file)
-  return request.post<ApiResponse<{ importedCount: number }>>('/api/health-data/import', formData, {
+  return request.post<ApiResponse<HealthDataImportResult>>('/api/health-data/import', formData, {
+    params: duplicateAction ? { duplicateAction } : undefined,
     headers: { 'Content-Type': 'multipart/form-data' },
   })
 }

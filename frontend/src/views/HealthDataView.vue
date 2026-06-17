@@ -125,6 +125,84 @@
         />
       </div>
     </el-card>
+
+    <el-dialog
+      v-model="overwriteDialogVisible"
+      title="发现重复记录"
+      width="720px"
+      destroy-on-close
+    >
+      <div v-if="pendingConflict" class="compare-dialog">
+        <p class="compare-tip">该时间已存在同类型数据，请核对后决定是否覆盖。</p>
+        <div class="compare-grid">
+          <div class="compare-card">
+            <h5>已有数据</h5>
+            <div class="compare-row"><span>类型</span><strong>{{ dataTypeLabel(pendingConflict.existingRecord.dataType) }}</strong></div>
+            <div class="compare-row"><span>数值</span><strong>{{ pendingConflict.existingRecord.dataValue }}</strong></div>
+            <div class="compare-row"><span>单位</span><strong>{{ pendingConflict.existingRecord.unit }}</strong></div>
+            <div class="compare-row"><span>时间</span><strong>{{ pendingConflict.existingRecord.recordTime }}</strong></div>
+          </div>
+          <div class="compare-card compare-card--incoming">
+            <h5>当前录入</h5>
+            <div class="compare-row"><span>类型</span><strong>{{ dataTypeLabel(pendingConflict.incomingRecord.dataType) }}</strong></div>
+            <div class="compare-row"><span>数值</span><strong>{{ pendingConflict.incomingRecord.dataValue }}</strong></div>
+            <div class="compare-row"><span>单位</span><strong>{{ pendingConflict.incomingRecord.unit }}</strong></div>
+            <div class="compare-row"><span>时间</span><strong>{{ pendingConflict.incomingRecord.recordTime }}</strong></div>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="closeOverwriteDialog">取消</el-button>
+        <el-button type="primary" :loading="overwriteSubmitting" @click="confirmOverwrite">
+          确认覆盖
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog
+      v-model="importConflictDialogVisible"
+      title="CSV 中发现重复记录"
+      width="880px"
+      destroy-on-close
+    >
+      <div v-if="importConflict" class="import-dialog">
+        <p class="compare-tip">
+          共发现 {{ importConflict.duplicateCount }} 条重复记录。可以选择覆盖所有重复项，或跳过重复项仅导入不冲突的数据。
+        </p>
+        <el-table :data="importConflictPreview" size="small" border max-height="320">
+          <el-table-column label="已有数据" min-width="300">
+            <template #default="{ row }">
+              <div class="import-preview-cell">
+                <strong>{{ dataTypeLabel(row.existingRecord.dataType) }}</strong>
+                <span>{{ row.existingRecord.dataValue }} {{ row.existingRecord.unit }}</span>
+                <span>{{ row.existingRecord.recordTime }}</span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="CSV 数据" min-width="300">
+            <template #default="{ row }">
+              <div class="import-preview-cell">
+                <strong>{{ dataTypeLabel(row.incomingRecord.dataType) }}</strong>
+                <span>{{ row.incomingRecord.dataValue }} {{ row.incomingRecord.unit }}</span>
+                <span>{{ row.incomingRecord.recordTime }}</span>
+              </div>
+            </template>
+          </el-table-column>
+        </el-table>
+        <p v-if="importConflict.duplicates.length > importConflictPreview.length" class="import-note">
+          仅展示前 {{ importConflictPreview.length }} 条重复记录。
+        </p>
+      </div>
+      <template #footer>
+        <el-button @click="closeImportConflictDialog">取消</el-button>
+        <el-button :loading="importDecisionSubmitting" @click="resolveImportConflict('SKIP')">
+          跳过重复
+        </el-button>
+        <el-button type="primary" :loading="importDecisionSubmitting" @click="resolveImportConflict('OVERWRITE')">
+          覆盖全部
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -133,7 +211,13 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Upload, Delete, Download } from '@element-plus/icons-vue'
 import { getHealthRecords, uploadHealthData, deleteHealthData, importHealthData } from '../api/health'
-import type { HealthRecord } from '../types'
+import type {
+  HealthDataConflictResponse,
+  HealthDataCreateRequest,
+  HealthDataImportConflictItem,
+  HealthDataImportConflictResponse,
+  HealthRecord,
+} from '../types'
 
 // ============ 表单 ============
 const now = () => {
@@ -159,57 +243,110 @@ const dataUnit = computed(() => dataUnits[form.dataType] || '')
 // 血压双输入框
 const bpSystolic = ref('120')
 const bpDiastolic = ref('80')
-// 切换血压时从 form.dataValue 拆分，否则组合
-function syncBpFromForm() {
-  if (form.dataType === 'BLOOD_PRESSURE' && form.dataValue.includes('/')) {
-    const parts = form.dataValue.split('/')
-    bpSystolic.value = parts[0]
-    bpDiastolic.value = parts[1]
-  }
-}
-function syncBpToForm() {
-  if (form.dataType === 'BLOOD_PRESSURE') {
-    form.dataValue = bpSystolic.value + '/' + bpDiastolic.value
-  }
-}
 
 const submitting = ref(false)
+const overwriteSubmitting = ref(false)
+const overwriteDialogVisible = ref(false)
+const pendingConflict = ref<HealthDataConflictResponse | null>(null)
 
 async function handleSubmit() {
-  if (!form.dataType || !form.dataValue.trim()) {
-    ElMessage.warning('请完善数据信息')
+  const payload = buildSubmitPayload()
+  if (!payload) {
     return
   }
-  // 非血压类型不允许负数
-  if (form.dataType !== 'BLOOD_PRESSURE') {
-    const val = parseFloat(form.dataValue)
-    if (isNaN(val) || val < 0) {
-      ElMessage.warning('请输入有效的非负数值')
-      return
-    }
-  }
+
   submitting.value = true
   try {
-    syncBpToForm()
-    await uploadHealthData({
-      dataType: form.dataType,
-      dataValue: String(form.dataValue),
-      unit: dataUnit.value,
-      recordTime: form.recordTime,
-    })
-    ElMessage.success('数据录入成功')
-    form.dataValue = ''
-    form.recordTime = now()
-    await fetchRecords()
-  } catch {
-    // handled
+    await submitHealthData(payload)
   } finally {
     submitting.value = false
   }
 }
 
+function buildSubmitPayload(overwrite = false): HealthDataCreateRequest | null {
+  const dataValue = form.dataType === 'BLOOD_PRESSURE'
+    ? `${bpSystolic.value.trim()}/${bpDiastolic.value.trim()}`
+    : form.dataValue.trim()
+
+  if (!form.dataType || !dataValue) {
+    ElMessage.warning('请完善数据信息')
+    return null
+  }
+  // 非血压类型不允许负数
+  if (form.dataType !== 'BLOOD_PRESSURE') {
+    const val = parseFloat(dataValue)
+    if (isNaN(val) || val < 0) {
+      ElMessage.warning('请输入有效的非负数值')
+      return null
+    }
+  }
+  form.dataValue = dataValue
+  return {
+    dataType: form.dataType,
+    dataValue,
+    unit: dataUnit.value,
+    recordTime: form.recordTime,
+    overwrite,
+  }
+}
+
+async function submitHealthData(payload: HealthDataCreateRequest): Promise<boolean> {
+  try {
+    await uploadHealthData(payload)
+    ElMessage.success(payload.overwrite ? '数据已覆盖' : '数据录入成功')
+    resetForm()
+    await fetchRecords()
+    return true
+  } catch (error) {
+    const err = error as Error & { code?: number; data?: unknown }
+    if (err.code === 40901) {
+      pendingConflict.value = err.data as HealthDataConflictResponse
+      overwriteDialogVisible.value = true
+      return false
+    }
+    return false
+  }
+}
+
+function resetForm() {
+  form.dataValue = ''
+  form.recordTime = now()
+  if (form.dataType === 'BLOOD_PRESSURE') {
+    bpSystolic.value = '120'
+    bpDiastolic.value = '80'
+  }
+}
+
+function closeOverwriteDialog() {
+  overwriteDialogVisible.value = false
+  pendingConflict.value = null
+}
+
+async function confirmOverwrite() {
+  const payload = buildSubmitPayload(true)
+  if (!payload) {
+    return
+  }
+  overwriteSubmitting.value = true
+  try {
+    const success = await submitHealthData(payload)
+    if (success) {
+      closeOverwriteDialog()
+    }
+  } finally {
+    overwriteSubmitting.value = false
+  }
+}
+
 // ============ 批量导入 ============
 const fileInput = ref<HTMLInputElement | null>(null)
+const pendingImportFile = ref<File | null>(null)
+const importConflictDialogVisible = ref(false)
+const importConflict = ref<HealthDataImportConflictResponse | null>(null)
+const importDecisionSubmitting = ref(false)
+const importConflictPreview = computed<HealthDataImportConflictItem[]>(() =>
+  importConflict.value?.duplicates.slice(0, 5) || []
+)
 
 function handleImport() {
   fileInput.value?.click()
@@ -220,14 +357,51 @@ async function handleFileChange(e: Event) {
   const file = input.files?.[0]
   if (!file) return
   try {
-    const res = await importHealthData(file)
-    const count = res.data.data?.importedCount || 0
-    ElMessage.success(`成功导入 ${count} 条数据`)
-    await fetchRecords()
-  } catch {
-    // handled
+    pendingImportFile.value = file
+    await submitImportFile()
   } finally {
     input.value = ''
+  }
+}
+
+async function submitImportFile(action?: 'OVERWRITE' | 'SKIP') {
+  if (!pendingImportFile.value) return
+  try {
+    const res = await importHealthData(pendingImportFile.value, action)
+    const result = res.data.data
+    const parts = [`新增 ${result.importedCount} 条`]
+    if (result.overwrittenCount > 0) {
+      parts.push(`覆盖 ${result.overwrittenCount} 条`)
+    }
+    if (result.skippedDuplicateCount > 0) {
+      parts.push(`跳过 ${result.skippedDuplicateCount} 条重复`)
+    }
+    ElMessage.success(`导入完成：${parts.join('，')}`)
+    closeImportConflictDialog()
+    pendingImportFile.value = null
+    await fetchRecords()
+  } catch (error) {
+    const err = error as Error & { code?: number; data?: unknown }
+    if (err.code === 40902) {
+      importConflict.value = err.data as HealthDataImportConflictResponse
+      importConflictDialogVisible.value = true
+      return
+    }
+  }
+}
+
+function closeImportConflictDialog() {
+  importConflictDialogVisible.value = false
+  importConflict.value = null
+  pendingImportFile.value = null
+}
+
+async function resolveImportConflict(action: 'OVERWRITE' | 'SKIP') {
+  importDecisionSubmitting.value = true
+  try {
+    await submitImportFile(action)
+  } finally {
+    importDecisionSubmitting.value = false
   }
 }
 
@@ -378,4 +552,73 @@ onMounted(fetchRecords)
 
 /* Data type tag colors */
 :deep(.el-tag) { border-radius: var(--r-sm); font-weight: 500; }
+
+.compare-tip {
+  margin: 0 0 16px;
+  color: var(--c-text-secondary);
+  line-height: 1.6;
+}
+
+.compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.compare-card {
+  padding: 16px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  background: var(--c-bg);
+}
+
+.compare-card--incoming {
+  background: var(--c-primary-light);
+}
+
+.compare-card h5 {
+  margin: 0 0 12px;
+  font-size: 15px;
+  color: var(--c-text);
+}
+
+.compare-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--c-border-light);
+}
+
+.compare-row:last-child {
+  border-bottom: none;
+}
+
+.compare-row span {
+  color: var(--c-text-secondary);
+}
+
+.compare-row strong {
+  color: var(--c-text);
+  text-align: right;
+}
+
+.import-preview-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  line-height: 1.5;
+}
+
+.import-note {
+  margin: 12px 0 0;
+  color: var(--c-text-muted);
+  font-size: 12px;
+}
+
+@media (max-width: 720px) {
+  .compare-grid {
+    grid-template-columns: 1fr;
+  }
+}
 </style>

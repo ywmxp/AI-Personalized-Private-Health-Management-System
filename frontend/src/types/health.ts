@@ -3,6 +3,7 @@ export interface HealthRecord {
   dataId: number
   dataType: string
   dataValue: string
+  unit?: string
   recordTime: string
 }
 
@@ -10,7 +11,37 @@ export interface HealthRecord {
 export interface HealthDataCreateRequest {
   dataType: string
   dataValue: string
+  unit?: string
   recordTime: string
+  overwrite?: boolean
+}
+
+export interface HealthDataComparisonItem {
+  dataType: string
+  dataValue: string
+  unit: string
+  recordTime: string
+}
+
+export interface HealthDataConflictResponse {
+  existingRecord: HealthDataComparisonItem
+  incomingRecord: HealthDataComparisonItem
+}
+
+export interface HealthDataImportConflictItem {
+  existingRecord: HealthDataComparisonItem
+  incomingRecord: HealthDataComparisonItem
+}
+
+export interface HealthDataImportConflictResponse {
+  duplicateCount: number
+  duplicates: HealthDataImportConflictItem[]
+}
+
+export interface HealthDataImportResult {
+  importedCount: number
+  overwrittenCount: number
+  skippedDuplicateCount: number
 }
 
 /** 分页响应 */

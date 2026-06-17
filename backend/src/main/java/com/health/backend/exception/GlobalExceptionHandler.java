@@ -19,15 +19,15 @@ import com.health.backend.dto.ApiResponse;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(BusinessException.class)
-    ResponseEntity<ApiResponse<Void>> handleBusinessException(BusinessException exception) {
+    ResponseEntity<ApiResponse<Object>> handleBusinessException(BusinessException exception) {
         HttpStatus status = switch (exception.getCode()) {
-            case ErrorCode.PHONE_EXISTS -> HttpStatus.CONFLICT;
+            case ErrorCode.PHONE_EXISTS, ErrorCode.DUPLICATE_HEALTH_DATA, ErrorCode.DUPLICATE_HEALTH_DATA_IMPORT -> HttpStatus.CONFLICT;
             case ErrorCode.LOGIN_FAILED, ErrorCode.UNAUTHORIZED -> HttpStatus.UNAUTHORIZED;
             case ErrorCode.USER_DISABLED, ErrorCode.FORBIDDEN -> HttpStatus.FORBIDDEN;
             default -> HttpStatus.BAD_REQUEST;
         };
         return ResponseEntity.status(status)
-            .body(ApiResponse.failure(exception.getCode(), exception.getMessage()));
+            .body(ApiResponse.failure(exception.getCode(), exception.getMessage(), exception.getData()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

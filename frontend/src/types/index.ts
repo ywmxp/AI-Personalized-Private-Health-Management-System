@@ -1,5 +1,16 @@
 export type { User, LoginRequest, RegisterRequest, LoginResponse } from './user'
-export type { HealthRecord, HealthDataCreateRequest, PaginatedData, TrendPoint, TrendResponse } from './health'
+export type {
+  HealthRecord,
+  HealthDataCreateRequest,
+  HealthDataComparisonItem,
+  HealthDataConflictResponse,
+  HealthDataImportConflictItem,
+  HealthDataImportConflictResponse,
+  HealthDataImportResult,
+  PaginatedData,
+  TrendPoint,
+  TrendResponse,
+} from './health'
 export type { ApiResponse } from './api'
 export type { AiProfileData, AiProfileRequest, AiPlanData, AiPlanRequest, AiPushData, AiPushRequest } from './ai'
 export type { KnowledgeItem, KnowledgePush, PageData } from './knowledge'

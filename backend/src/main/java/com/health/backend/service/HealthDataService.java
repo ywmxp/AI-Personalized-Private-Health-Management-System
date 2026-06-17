@@ -11,9 +11,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.LinkedHashMap;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +24,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.health.backend.domain.HealthData;
 import com.health.backend.dto.PageResponse;
+import com.health.backend.dto.HealthDataComparisonItem;
+import com.health.backend.dto.HealthDataConflictResponse;
+import com.health.backend.dto.HealthDataImportConflictItem;
+import com.health.backend.dto.HealthDataImportConflictResponse;
+import com.health.backend.dto.HealthDataImportDuplicateAction;
+import com.health.backend.dto.HealthDataImportResult;
 import com.health.backend.exception.BusinessException;
 import com.health.backend.exception.ErrorCode;
 import com.health.backend.repository.HealthDataRepository;
@@ -42,8 +51,35 @@ public class HealthDataService {
     /** 录入健康数据 */
     @Transactional
     public HealthData create(Long userId, String dataType, String dataValue, String unit, LocalDateTime recordTime) {
+        return create(userId, dataType, dataValue, unit, recordTime, false);
+    }
+
+    /** 录入健康数据 */
+    @Transactional
+    public HealthData create(
+        Long userId,
+        String dataType,
+        String dataValue,
+        String unit,
+        LocalDateTime recordTime,
+        boolean overwrite
+    ) {
         HealthDataValidator.ValidatedHealthData validated =
             HealthDataValidator.validateForCreate(dataType, dataValue, unit, recordTime);
+
+        Optional<HealthData> existingRecord = healthDataRepository
+            .findFirstByUserIdAndDataTypeAndRecordTimeOrderByDataIdAsc(
+                userId, validated.dataType(), validated.recordTime());
+        if (existingRecord.isPresent()) {
+            if (!overwrite) {
+                throw duplicateHealthData(existingRecord.get(), validated);
+            }
+            HealthData data = existingRecord.get();
+            data.setDataValue(validated.dataValue());
+            data.setUnit(validated.unit());
+            return healthDataRepository.save(data);
+        }
+
         HealthData data = new HealthData();
         data.setUserId(userId);
         data.setDataType(validated.dataType());
@@ -74,7 +110,10 @@ public class HealthDataService {
         };
 
         Page<HealthData> result = healthDataRepository.findAll(spec,
-            PageRequest.of(page - 1, size));
+            PageRequest.of(
+                page - 1,
+                size,
+                Sort.by(Sort.Order.desc("recordTime"), Sort.Order.desc("dataId"))));
 
         return new PageResponse<>(result.getContent(), page, size, result.getTotalElements());
     }
@@ -82,17 +121,72 @@ public class HealthDataService {
     /** 批量导入健康数据 CSV */
     @Transactional
     public int importCsv(Long userId, MultipartFile file) {
+        return importCsv(userId, file, null).importedCount();
+    }
+
+    /** 批量导入健康数据 CSV */
+    @Transactional
+    public HealthDataImportResult importCsv(
+        Long userId,
+        MultipartFile file,
+        HealthDataImportDuplicateAction duplicateAction
+    ) {
         if (file == null || file.isEmpty()) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, "CSV文件不能为空");
         }
 
-        List<HealthData> records = parseCsv(userId, file);
+        List<HealthData> records = deduplicateCsvRecords(parseCsv(userId, file));
         if (records.isEmpty()) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, "CSV文件未包含有效数据行");
         }
 
-        healthDataRepository.saveAll(records);
-        return records.size();
+        List<HealthData> newRecords = new ArrayList<>();
+        List<HealthData> overwriteRecords = new ArrayList<>();
+        List<HealthDataImportConflictItem> conflicts = new ArrayList<>();
+
+        for (HealthData incomingRecord : records) {
+            Optional<HealthData> existingRecord = healthDataRepository
+                .findFirstByUserIdAndDataTypeAndRecordTimeOrderByDataIdAsc(
+                    userId,
+                    incomingRecord.getDataType(),
+                    incomingRecord.getRecordTime());
+            if (existingRecord.isEmpty()) {
+                newRecords.add(incomingRecord);
+                continue;
+            }
+
+            HealthData existingData = existingRecord.get();
+            conflicts.add(new HealthDataImportConflictItem(
+                HealthDataComparisonItem.from(existingData),
+                HealthDataComparisonItem.from(incomingRecord)));
+
+            if (duplicateAction == HealthDataImportDuplicateAction.OVERWRITE) {
+                existingData.setDataValue(incomingRecord.getDataValue());
+                existingData.setUnit(incomingRecord.getUnit());
+                overwriteRecords.add(existingData);
+            }
+        }
+
+        if (!conflicts.isEmpty() && duplicateAction == null) {
+            throw new BusinessException(
+                ErrorCode.DUPLICATE_HEALTH_DATA_IMPORT,
+                "CSV中存在重复健康数据，请选择覆盖或跳过重复项",
+                new HealthDataImportConflictResponse(conflicts.size(), conflicts)
+            );
+        }
+
+        if (!newRecords.isEmpty()) {
+            healthDataRepository.saveAll(newRecords);
+        }
+        if (!overwriteRecords.isEmpty()) {
+            healthDataRepository.saveAll(overwriteRecords);
+        }
+
+        return new HealthDataImportResult(
+            newRecords.size(),
+            overwriteRecords.size(),
+            duplicateAction == HealthDataImportDuplicateAction.SKIP ? conflicts.size() : 0
+        );
     }
 
     /** 删除健康数据 */
@@ -193,5 +287,34 @@ public class HealthDataService {
             return line.substring(1);
         }
         return line;
+    }
+
+    private List<HealthData> deduplicateCsvRecords(List<HealthData> records) {
+        Map<String, HealthData> deduplicated = new LinkedHashMap<>();
+        for (HealthData record : records) {
+            deduplicated.put(buildDuplicateKey(record.getDataType(), record.getRecordTime()), record);
+        }
+        return new ArrayList<>(deduplicated.values());
+    }
+
+    private BusinessException duplicateHealthData(
+        HealthData existingRecord,
+        HealthDataValidator.ValidatedHealthData incomingRecord
+    ) {
+        return new BusinessException(
+            ErrorCode.DUPLICATE_HEALTH_DATA,
+            "该时间已存在同类型健康数据，请确认是否覆盖原记录",
+            new HealthDataConflictResponse(
+                HealthDataComparisonItem.from(existingRecord),
+                new HealthDataComparisonItem(
+                    incomingRecord.dataType(),
+                    incomingRecord.dataValue(),
+                    incomingRecord.unit(),
+                    incomingRecord.recordTime()))
+        );
+    }
+
+    private String buildDuplicateKey(String dataType, LocalDateTime recordTime) {
+        return dataType + "|" + recordTime.format(DT_FMT);
     }
 }
