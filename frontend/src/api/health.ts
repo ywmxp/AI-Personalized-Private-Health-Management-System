@@ -10,7 +10,7 @@ import type {
 /** 获取健康数据列表 */
 export async function getHealthRecords(_params?: { dataType?: string; startTime?: string; endTime?: string; page?: number; size?: number }) {
   if (isMockEnabled()) {
-    const data = getMockHealthRecords()
+    const data = getMockHealthRecords(_params)
     return mockSuccess({ items: [...data.items], page: data.page, size: data.size, total: data.total })
   }
   return request.get<ApiResponse<{ items: HealthRecord[]; page: number; size: number; total: number }>>('/api/health-data', { params: _params })

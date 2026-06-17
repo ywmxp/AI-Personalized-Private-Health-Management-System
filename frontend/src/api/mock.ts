@@ -30,6 +30,10 @@ export function mockPage<T>(items: T[], page = 1, size = 10, total = 0): { data:
   }
 }
 
+function compareDateTimeText(a: string, b: string) {
+  return a.localeCompare(b)
+}
+
 // ---- 模拟数据 ----
 
 // 可变健康数据（支持增删）
@@ -41,8 +45,20 @@ const _mockHealthItems = [
   { dataId: 4, userId: 1, dataType: 'SLEEP_HOURS', dataValue: '7.5', unit: '小时', recordTime: '2026-06-05 07:00:00' },
   { dataId: 5, userId: 1, dataType: 'EXERCISE_MINUTES', dataValue: '45', unit: '分钟', recordTime: '2026-06-04 18:00:00' },
 ]
-export function getMockHealthRecords() {
-  return { items: _mockHealthItems, page: 1, size: 10, total: _mockHealthItems.length }
+export function getMockHealthRecords(params?: { dataType?: string; startTime?: string; endTime?: string; page?: number; size?: number }) {
+  const page = params?.page || 1
+  const size = params?.size || 10
+
+  const filtered = _mockHealthItems
+    .filter((item) => !params?.dataType || item.dataType === params.dataType)
+    .filter((item) => !params?.startTime || compareDateTimeText(item.recordTime, params.startTime) >= 0)
+    .filter((item) => !params?.endTime || compareDateTimeText(item.recordTime, params.endTime) <= 0)
+    .sort((a, b) => compareDateTimeText(b.recordTime, a.recordTime) || b.dataId - a.dataId)
+
+  const start = (page - 1) * size
+  const items = filtered.slice(start, start + size)
+
+  return { items, page, size, total: filtered.length }
 }
 export function addMockHealthRecord(item: { dataType: string; dataValue: string; unit: string; recordTime?: string }) {
   const r = { dataId: ++_healthId, userId: 1, ...item, recordTime: item.recordTime || new Date().toISOString().replace('T', ' ').slice(0, 19) }

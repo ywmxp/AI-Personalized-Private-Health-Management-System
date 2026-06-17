@@ -82,6 +82,18 @@
             <el-option label="运动时长" value="EXERCISE_MINUTES" />
             <el-option label="睡眠时长" value="SLEEP_HOURS" />
           </el-select>
+          <el-date-picker
+            v-model="filterDateRange"
+            type="datetimerange"
+            format="YYYY-MM-DD HH:mm"
+            value-format="YYYY-MM-DD HH:mm:ss"
+            range-separator="至"
+            start-placeholder="开始时间"
+            end-placeholder="结束时间"
+            clearable
+            @change="handleFilterChange"
+            style="width: 360px"
+          />
         </div>
       </div>
 
@@ -424,13 +436,21 @@ async function resolveImportConflict(action: 'OVERWRITE' | 'SKIP') {
 const loading = ref(false)
 const records = ref<HealthRecord[]>([])
 const filterType = ref<string | null>(null)
+const filterDateRange = ref<[string, string] | null>(null)
 const pagination = reactive({ page: 1, size: 10, total: 0 })
+
+function handleFilterChange() {
+  pagination.page = 1
+  fetchRecords()
+}
 
 async function fetchRecords() {
   loading.value = true
   try {
     const res = await getHealthRecords({
       dataType: filterType.value || undefined,
+      startTime: filterDateRange.value?.[0],
+      endTime: filterDateRange.value?.[1],
       page: pagination.page,
       size: pagination.size,
     })
@@ -540,6 +560,12 @@ onMounted(fetchRecords)
 .form-actions {
   display: flex;
   gap: 12px;
+}
+:deep(.list-filters) {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 :deep(.el-select .el-input__wrapper:hover),
 :deep(.el-input-number .el-input__wrapper:hover) {
