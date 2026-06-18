@@ -2,12 +2,15 @@ package com.health.backend.domain;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
 @Entity
@@ -32,6 +35,7 @@ public class HealthData {
     private String unit;
 
     @Column(name = "record_time", nullable = false)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime recordTime;
 
     @Column(name = "create_time", nullable = false)
@@ -49,6 +53,11 @@ public class HealthData {
         if (updateTime == null) {
             updateTime = now;
         }
+    }
+
+    @PreUpdate
+    void preUpdate() {
+        updateTime = LocalDateTime.now();
     }
 
     public Long getDataId() { return dataId; }
