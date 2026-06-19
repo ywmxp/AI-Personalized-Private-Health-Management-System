@@ -219,7 +219,15 @@ import { Search } from '@element-plus/icons-vue'
 import { getAdminUsers, toggleUserStatus, getLoginLogs } from '../../api/admin'
 import type { AdminUserItem, LoginLog } from '../../types'
 
-// ============ Tab =====  try {
+const activeTab = ref('users')
+const filterForm = reactive({ username: '', phone: '', status: null as number | null })
+const userLoading = ref(false)
+const userList = ref<AdminUserItem[]>([])
+const userPagination = reactive({ pageNum: 1, pageSize: 10, total: 0 })
+
+async function fetchUsers() {
+  userLoading.value = true
+  try {
     const res = await getAdminUsers({
       username: filterForm.username || undefined,
       phone: filterForm.phone || undefined,
@@ -239,7 +247,16 @@ function handleUserReset() {
   userPagination.pageNum = 1; fetchUsers()
 }
 
-// ============ 启用/禁用 =====    const newStatus = row.status === 1 ? 0 : 1
+// ============ 启用/禁用 ============
+async function handleToggleStatus(row: AdminUserItem) {
+  const actionText = row.status === 1 ? '禁用' : '启用'
+  try {
+    await ElMessageBox.confirm(
+      `确定要${actionText}用户「${row.username}」吗？`,
+      `${actionText}账号`,
+      { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' },
+    )
+    const newStatus = row.status === 1 ? 0 : 1
     await toggleUserStatus(row.userId, newStatus)
     ElMessage.success(`${actionText}成功`)
     row.status = newStatus
@@ -248,7 +265,45 @@ function handleUserReset() {
   }
 }
 
-// ============ 用户详情 =====function formatDate(dateStr: string) {
+// ============ 用户详情 ============
+const detailVisible = ref(false)
+const detailUser = ref<AdminUserItem | null>(null)
+function handleViewDetail(row: AdminUserItem) { detailUser.value = row; detailVisible.value = true }
+function genderLabel(g?: string) {
+  if (g === 'MALE') return '男'
+  if (g === 'FEMALE') return '女'
+  return g || '-'
+}
+
+// ============ 登录日志 ============
+const logFilter = reactive({ userId: null as number | null, result: null as number | null })
+const logLoading = ref(false)
+const logList = ref<LoginLog[]>([])
+const logPagination = reactive({ pageNum: 1, pageSize: 10, total: 0 })
+
+async function fetchLogs() {
+  logLoading.value = true
+  try {
+    const res = await getLoginLogs({
+      userId: logFilter.userId || undefined,
+      result: logFilter.result || undefined,
+      pageNum: logPagination.pageNum,
+      pageSize: logPagination.pageSize,
+    })
+    const d = res.data.data
+    logList.value = d.items || []
+    logPagination.total = d.total || 0
+  } catch { /* handled */ } finally { logLoading.value = false }
+}
+
+function handleLogSearch() { logPagination.pageNum = 1; fetchLogs() }
+function handleLogReset() { logFilter.userId = null; logFilter.result = null; logPagination.pageNum = 1; fetchLogs() }
+
+// ============ Tab 切换 ============
+function handleTabChange(name: string) { if (name === 'logs') fetchLogs() }
+
+// ============ 工具 ============
+function formatDate(dateStr: string) {
   if (!dateStr) return '-'
   const d = new Date(dateStr)
   return d.toLocaleString('zh-CN', { hour12: false })
