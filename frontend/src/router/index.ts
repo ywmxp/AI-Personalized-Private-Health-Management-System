@@ -97,8 +97,8 @@ router.beforeEach((to, _from) => {
   if (!token) return '/login'
 
   if (to.meta.requiresAdmin) {
-    const role = localStorage.getItem('role')
-    if (role !== 'admin') return '/home'
+    const userInfo = JSON.parse(localStorage.getItem('userInfo') || 'null')
+    if ((userInfo?.role || '').toUpperCase() !== 'ADMIN') return '/home'
   }
 
   return true

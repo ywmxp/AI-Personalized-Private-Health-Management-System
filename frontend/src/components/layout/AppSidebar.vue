@@ -84,7 +84,7 @@ const route = useRoute()
 
 const isAdmin = computed(() => {
   const userInfo = JSON.parse(localStorage.getItem('userInfo') || 'null')
-  return userInfo?.role === 'admin'
+  return (userInfo?.role || '').toUpperCase() === 'ADMIN'
 })
 </script>
 

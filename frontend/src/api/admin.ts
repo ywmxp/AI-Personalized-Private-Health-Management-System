@@ -20,8 +20,6 @@ export async function getLoginLogs(_params: { userId?: number; result?: number; 
   return request.get<ApiResponse<PageData<LoginLog>>>('/api/admin/login-logs', { params: _params })
 }
 
-=======
->>>>>>> dev
 /** 平台统计 */
 export async function getPlatformStatistics(_params: { startDate?: string; endDate?: string }) {
   if (isMockEnabled()) return mockSuccess(mockPlatformStatistics)
