@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.health.backend.domain.HealthProfile;
 import com.health.backend.domain.LoginLog;
 import com.health.backend.domain.User;
 import com.health.backend.domain.UserStatus;
@@ -25,6 +26,7 @@ import com.health.backend.dto.ApiResponse;
 import com.health.backend.dto.PageResponse;
 import com.health.backend.dto.UserSummaryResponse;
 import com.health.backend.repository.HealthDataRepository;
+import com.health.backend.repository.HealthProfileRepository;
 import com.health.backend.repository.LoginLogRepository;
 import com.health.backend.repository.UserRepository;
 
@@ -38,13 +40,16 @@ public class AdminController {
     private final UserRepository userRepository;
     private final LoginLogRepository loginLogRepository;
     private final HealthDataRepository healthDataRepository;
+    private final HealthProfileRepository healthProfileRepository;
 
     public AdminController(UserRepository userRepository,
                            LoginLogRepository loginLogRepository,
-                           HealthDataRepository healthDataRepository) {
+                           HealthDataRepository healthDataRepository,
+                           HealthProfileRepository healthProfileRepository) {
         this.userRepository = userRepository;
         this.loginLogRepository = loginLogRepository;
         this.healthDataRepository = healthDataRepository;
+        this.healthProfileRepository = healthProfileRepository;
     }
 
     /** 用户列表 */
@@ -145,14 +150,15 @@ public class AdminController {
         if (endDate == null) endDate = LocalDate.now();
 
         long totalUsers = userRepository.count();
-
-        LocalDateTime start = startDate.atStartOfDay();
-        LocalDateTime end = endDate.atTime(23, 59, 59);
-
         long totalHealthData = healthDataRepository.count();
 
-        Map<String, Long> riskDistribution = Map.of("low", totalUsers * 2 / 3,
-            "medium", totalUsers / 4, "high", totalUsers / 10);
+        // 从 health_profile 表统计各风险等级人数
+        List<HealthProfile> allProfiles = healthProfileRepository.findAll();
+        long lowRisk = allProfiles.stream().filter(p -> "LOW".equalsIgnoreCase(p.getRiskLevel())).count();
+        long mediumRisk = allProfiles.stream().filter(p -> "MEDIUM".equalsIgnoreCase(p.getRiskLevel())).count();
+        long highRisk = allProfiles.stream().filter(p -> "HIGH".equalsIgnoreCase(p.getRiskLevel())).count();
+
+        Map<String, Long> riskDistribution = Map.of("low", lowRisk, "medium", mediumRisk, "high", highRisk);
 
         List<Map<String, Object>> dailyDataCount = List.of();
 
