@@ -65,8 +65,8 @@
             <el-table-column prop="phone" label="手机号" width="140" show-overflow-tooltip />
             <el-table-column label="角色" width="80" align="center">
               <template #default="{ row }">
-                <el-tag :type="row.role === 'admin' ? 'warning' : 'info'" size="small">
-                  {{ row.role === 'admin' ? '管理员' : '用户' }}
+                <el-tag :type="(row.role || '').toUpperCase() === 'ADMIN' ? 'warning' : 'info'" size="small">
+                  {{ (row.role || '').toUpperCase() === 'ADMIN' ? '管理员' : '用户' }}
                 </el-tag>
               </template>
             </el-table-column>
@@ -108,8 +108,8 @@
               :page-sizes="[10, 20, 50, 100]"
               :total="userPagination.total"
               layout="total, sizes, prev, pager, next, jumper"
-              @size-change="handleUserSearch"
-              @current-change="handleUserSearch"
+              @size-change="handleUserSizeChange"
+              @current-change="handleUserPageChange"
             />
           </div>
         </el-card>
@@ -182,8 +182,8 @@
               :page-sizes="[10, 20, 50]"
               :total="logPagination.total"
               layout="total, sizes, prev, pager, next, jumper"
-              @size-change="handleLogSearch"
-              @current-change="handleLogSearch"
+              @size-change="handleLogSizeChange"
+              @current-change="handleLogPageChange"
             />
           </div>
         </el-card>
@@ -249,6 +249,8 @@ async function fetchUsers() {
 }
 
 function handleUserSearch() { userPagination.pageNum = 1; fetchUsers() }
+function handleUserPageChange(page: number) { userPagination.pageNum = page; fetchUsers() }
+function handleUserSizeChange(size: number) { userPagination.pageNum = 1; userPagination.pageSize = size; fetchUsers() }
 function handleUserReset() {
   filterForm.username = ''; filterForm.phone = ''; filterForm.status = null
   userPagination.pageNum = 1; fetchUsers()
@@ -307,6 +309,8 @@ async function fetchLogs() {
 }
 
 function handleLogSearch() { logPagination.pageNum = 1; fetchLogs() }
+function handleLogPageChange(page: number) { logPagination.pageNum = page; fetchLogs() }
+function handleLogSizeChange(size: number) { logPagination.pageNum = 1; logPagination.pageSize = size; fetchLogs() }
 function handleLogReset() { logFilter.userId = null; logFilter.result = null; logPagination.pageNum = 1; fetchLogs() }
 
 // ============ Tab 切换 ============
