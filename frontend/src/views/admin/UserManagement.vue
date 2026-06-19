@@ -99,6 +99,8 @@
             </el-table-column>
           </el-table>
 
+          <el-empty v-if="!userLoading && userList.length === 0" description="暂无用户数据" />
+
           <div class="pagination-wrapper">
             <el-pagination
               v-model:current-page="userPagination.pageNum"
@@ -171,6 +173,8 @@
             </el-table-column>
           </el-table>
 
+          <el-empty v-if="!logLoading && logList.length === 0" description="暂无登录日志" />
+
           <div class="pagination-wrapper">
             <el-pagination
               v-model:current-page="logPagination.pageNum"
@@ -238,7 +242,10 @@ async function fetchUsers() {
     const d = res.data.data
     userList.value = d.items || []
     userPagination.total = d.total || 0
-  } catch { /* handled */ } finally { userLoading.value = false }
+  } catch {
+    ElMessage.error('获取用户列表失败')
+    userList.value = []
+  } finally { userLoading.value = false }
 }
 
 function handleUserSearch() { userPagination.pageNum = 1; fetchUsers() }
@@ -293,7 +300,10 @@ async function fetchLogs() {
     const d = res.data.data
     logList.value = d.items || []
     logPagination.total = d.total || 0
-  } catch { /* handled */ } finally { logLoading.value = false }
+  } catch {
+    ElMessage.error('获取登录日志失败')
+    logList.value = []
+  } finally { logLoading.value = false }
 }
 
 function handleLogSearch() { logPagination.pageNum = 1; fetchLogs() }
