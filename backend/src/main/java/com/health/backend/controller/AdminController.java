@@ -131,7 +131,9 @@ public class AdminController {
             .map(log -> Map.<String, Object>of(
                 "logId", log.getLogId(),
                 "userId", log.getUserId(),
-                "phone", userRepository.findById(log.getUserId()).map(User::getPhone).orElse("未知"),
+                "phone", log.getUserId() != null
+                    ? userRepository.findById(log.getUserId()).map(User::getPhone).orElse("未知")
+                    : "未知",
                 "loginIp", log.getLoginIp() != null ? log.getLoginIp() : "",
                 "loginTime", log.getLoginTime().toString(),
                 "loginResult", log.getLoginResult()))
