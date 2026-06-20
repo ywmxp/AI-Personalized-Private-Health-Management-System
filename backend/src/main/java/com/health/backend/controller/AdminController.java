@@ -64,6 +64,7 @@ public class AdminController {
         @RequestParam(defaultValue = "1") int pageNum,
         @RequestParam(defaultValue = "10") int pageSize
     ) {
+        UserStatus statusFilter = parseStatusFilter(status);
         Specification<User> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             if (username != null && !username.isBlank()) {
@@ -72,8 +73,8 @@ public class AdminController {
             if (phone != null && !phone.isBlank()) {
                 predicates.add(cb.like(root.get("phone"), "%" + phone + "%"));
             }
-            if (status != null && !status.isBlank()) {
-                predicates.add(cb.equal(root.get("status"), UserStatus.valueOf(status)));
+            if (statusFilter != null) {
+                predicates.add(cb.equal(root.get("status"), statusFilter));
             }
             return cb.and(predicates.toArray(new Predicate[0]));
         };
@@ -85,7 +86,7 @@ public class AdminController {
             .map(u -> new UserSummaryResponse(
                 u.getUserId(), u.getUsername(), u.getPhone(),
                 u.getRole().name(),
-                u.getStatus() == UserStatus.ENABLED ? 1 : 0,
+                u.getStatus().getCode(),
                 u.getCreateTime().toString(),
                 u.getBirthDate(),
                 u.getGender() != null ? u.getGender().name() : null,
@@ -103,9 +104,16 @@ public class AdminController {
     ) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("用户不存在"));
-        user.setStatus(body.get("status") == 1 ? UserStatus.ENABLED : UserStatus.DISABLED);
+        user.setStatus(UserStatus.fromCode(body.get("status")));
         userRepository.save(user);
         return ApiResponse.success(null);
+    }
+
+    private UserStatus parseStatusFilter(String status) {
+        if (status == null || status.isBlank()) {
+            return null;
+        }
+        return UserStatus.fromRequestValue(status);
     }
 
     /** 登录日志 */
