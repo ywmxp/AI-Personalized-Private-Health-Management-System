@@ -10,6 +10,7 @@ import java.util.Map;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -127,7 +128,7 @@ public class AdminController {
         };
 
         Page<LoginLog> logPage = loginLogRepository.findAll(spec,
-            PageRequest.of(pageNum - 1, pageSize));
+            PageRequest.of(pageNum - 1, pageSize, Sort.by(Sort.Direction.DESC, "loginTime", "logId")));
 
         List<Map<String, Object>> items = logPage.getContent().stream()
             .map(this::toLoginLogItem)
