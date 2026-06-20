@@ -1,13 +1,16 @@
 package com.health.backend.controller;
 
+import java.sql.Date;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -125,18 +128,10 @@ public class AdminController {
         };
 
         Page<LoginLog> logPage = loginLogRepository.findAll(spec,
-            PageRequest.of(pageNum - 1, pageSize));
+            PageRequest.of(pageNum - 1, pageSize, Sort.by(Sort.Direction.DESC, "loginTime", "logId")));
 
         List<Map<String, Object>> items = logPage.getContent().stream()
-            .map(log -> Map.<String, Object>of(
-                "logId", log.getLogId(),
-                "userId", log.getUserId(),
-                "phone", log.getUserId() != null
-                    ? userRepository.findById(log.getUserId()).map(User::getPhone).orElse("未知")
-                    : "未知",
-                "loginIp", log.getLoginIp() != null ? log.getLoginIp() : "",
-                "loginTime", log.getLoginTime().toString(),
-                "loginResult", log.getLoginResult()))
+            .map(this::toLoginLogItem)
             .toList();
 
         return ApiResponse.success(new PageResponse<>(items, pageNum, pageSize, logPage.getTotalElements()));
@@ -144,30 +139,75 @@ public class AdminController {
 
     /** 平台统计 */
     @GetMapping("/statistics")
-    public ApiResponse<Map<String, Object>> statistics(
-        @RequestParam(required = false) LocalDate startDate,
-        @RequestParam(required = false) LocalDate endDate
-    ) {
-        if (startDate == null) startDate = LocalDate.now().minusDays(30);
-        if (endDate == null) endDate = LocalDate.now();
-
+    public ApiResponse<Map<String, Object>> statistics() {
         long totalUsers = userRepository.count();
         long totalHealthData = healthDataRepository.count();
 
-        // 从 health_profile 表统计各风险等级人数
-        List<HealthProfile> allProfiles = healthProfileRepository.findAll();
-        long lowRisk = allProfiles.stream().filter(p -> "LOW".equalsIgnoreCase(p.getRiskLevel())).count();
-        long mediumRisk = allProfiles.stream().filter(p -> "MEDIUM".equalsIgnoreCase(p.getRiskLevel())).count();
-        long highRisk = allProfiles.stream().filter(p -> "HIGH".equalsIgnoreCase(p.getRiskLevel())).count();
+        // 按每个用户最新一份 health_profile 统计当前风险人数
+        List<HealthProfile> latestProfiles = healthProfileRepository.findLatestProfilesPerUser();
+        long lowRisk = latestProfiles.stream().filter(p -> "LOW".equalsIgnoreCase(p.getRiskLevel())).count();
+        long mediumRisk = latestProfiles.stream().filter(p -> "MEDIUM".equalsIgnoreCase(p.getRiskLevel())).count();
+        long highRisk = latestProfiles.stream().filter(p -> "HIGH".equalsIgnoreCase(p.getRiskLevel())).count();
+        long usersWithoutProfile = Math.max(0, totalUsers - latestProfiles.size());
 
         Map<String, Long> riskDistribution = Map.of("low", lowRisk, "medium", mediumRisk, "high", highRisk);
 
-        List<Map<String, Object>> dailyDataCount = List.of();
+        List<Map<String, Object>> dailyDataCount = buildDailyDataCount();
 
         return ApiResponse.success(Map.of(
             "totalUsers", totalUsers,
             "totalHealthData", totalHealthData,
             "riskDistribution", riskDistribution,
+            "usersWithoutProfile", usersWithoutProfile,
             "dailyDataCount", dailyDataCount));
+    }
+
+    private Map<String, Object> toLoginLogItem(LoginLog log) {
+        Map<String, Object> item = new HashMap<>();
+        item.put("logId", log.getLogId());
+        item.put("userId", log.getUserId());
+        item.put("phone", resolvePhone(log.getUserId()));
+        item.put("loginIp", log.getLoginIp() != null ? log.getLoginIp() : "");
+        item.put("loginTime", log.getLoginTime().toString());
+        item.put("loginResult", log.getLoginResult());
+        return item;
+    }
+
+    private String resolvePhone(Long userId) {
+        if (userId == null) {
+            return "未知";
+        }
+        return userRepository.findById(userId).map(User::getPhone).orElse("未知");
+    }
+
+    private List<Map<String, Object>> buildDailyDataCount() {
+        LocalDate endDate = LocalDate.now();
+        LocalDate startDate = endDate.minusDays(29);
+        LocalDateTime start = startDate.atStartOfDay();
+        LocalDateTime endExclusive = endDate.plusDays(1).atStartOfDay();
+
+        Map<LocalDate, Long> countsByDate = new HashMap<>();
+        for (Object[] row : healthDataRepository.countDailyRecordsBetween(start, endExclusive)) {
+            countsByDate.put(toLocalDate(row[0]), ((Number) row[1]).longValue());
+        }
+
+        List<Map<String, Object>> dailyDataCount = new ArrayList<>();
+        for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
+            dailyDataCount.add(Map.of(
+                "date", date.toString(),
+                "count", countsByDate.getOrDefault(date, 0L)
+            ));
+        }
+        return dailyDataCount;
+    }
+
+    private LocalDate toLocalDate(Object value) {
+        if (value instanceof LocalDate localDate) {
+            return localDate;
+        }
+        if (value instanceof Date sqlDate) {
+            return sqlDate.toLocalDate();
+        }
+        return LocalDate.parse(String.valueOf(value));
     }
 }

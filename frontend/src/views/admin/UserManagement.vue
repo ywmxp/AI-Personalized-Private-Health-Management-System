@@ -294,8 +294,8 @@ async function fetchLogs() {
   logLoading.value = true
   try {
     const res = await getLoginLogs({
-      userId: logFilter.userId || undefined,
-      result: logFilter.result || undefined,
+      userId: logFilter.userId ?? undefined,
+      result: logFilter.result ?? undefined,
       pageNum: logPagination.pageNum,
       pageSize: logPagination.pageSize,
     })

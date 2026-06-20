@@ -2,29 +2,8 @@
   <div class="statistics-page">
     <div class="page-header">
       <h2>📊 健康数据统计</h2>
-      <p class="subtitle">平台数据概览与统计分析</p>
+      <p class="subtitle">平台当前概览与最近30天录入趋势</p>
     </div>
-
-    <!-- 时间筛选 -->
-    <el-card class="filter-card" shadow="never">
-      <div class="filter-row">
-        <div class="filter-item">
-          <label>统计区间：</label>
-          <el-date-picker
-            v-model="dateRange"
-            type="daterange"
-            range-separator="至"
-            start-placeholder="开始日期"
-            end-placeholder="结束日期"
-            format="YYYY-MM-DD"
-            value-format="YYYY-MM-DD"
-          />
-        </div>
-        <el-button type="primary" @click="fetchStatistics" :loading="loading" :icon="Search">
-          查询
-        </el-button>
-      </div>
-    </el-card>
 
     <!-- 概览卡片 -->
     <div class="overview-cards" v-loading="loading">
@@ -33,6 +12,13 @@
         <div class="ov-info">
           <span class="ov-value">{{ stats?.totalUsers ?? '--' }}</span>
           <span class="ov-label">用户总数</span>
+        </div>
+      </el-card>
+            <el-card class="overview-card risk-missing" shadow="hover">
+        <div class="ov-icon">🕘</div>
+        <div class="ov-info">
+          <span class="ov-value">{{ stats?.usersWithoutProfile ?? '--' }}</span>
+          <span class="ov-label">未生成画像人数</span>
         </div>
       </el-card>
       <el-card class="overview-card total-data" shadow="hover">
@@ -63,11 +49,15 @@
           <span class="ov-label">高风险人数</span>
         </div>
       </el-card>
+
     </div>
 
     <!-- 风险分布图表 -->
     <el-card v-if="stats" class="chart-card" shadow="never">
       <h3>🎯 风险等级分布</h3>
+      <p class="chart-note">
+        风险人数按每位用户最新一份健康画像统计，未生成画像的用户不计入低/中/高风险分布。
+      </p>
       <div class="risk-chart-container">
         <div class="risk-bars">
           <div class="risk-bar-item">
@@ -107,35 +97,26 @@
     <!-- 每日数据录入量 -->
     <el-card v-if="stats && stats.dailyDataCount?.length" class="chart-card" shadow="never">
       <h3>📅 每日数据录入量</h3>
+      <p class="chart-note">展示最近30天每天新增的健康数据记录数。</p>
       <div class="daily-chart-container">
         <canvas ref="dailyCanvas" class="daily-canvas"></canvas>
       </div>
     </el-card>
 
     <!-- 空状态 -->
-    <EmptyState v-if="!stats && !loading" description="选择时间范围，查询平台统计数据" />
+    <EmptyState v-if="!stats && !loading" description="暂无平台统计数据" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick } from 'vue'
-import { Search } from '@element-plus/icons-vue'
 import { getPlatformStatistics } from '../../api/admin'
 import EmptyState from '../../components/common/EmptyState.vue'
 import type { PlatformStatistics } from '../../types'
 
 const loading = ref(false)
 const stats = ref<PlatformStatistics | null>(null)
-const dateRange = ref<[string, string] | null>(null)
 const dailyCanvas = ref<HTMLCanvasElement | null>(null)
-
-function getDefaultRange(): [string, string] {
-  const end = new Date()
-  const start = new Date()
-  start.setDate(start.getDate() - 30)
-  const fmt = (d: Date) => d.toISOString().split('T')[0]
-  return [fmt(start), fmt(end)]
-}
 
 const maxRiskCount = computed(() => {
   if (!stats.value) return 1
@@ -151,8 +132,7 @@ function barPercent(val: number) {
 async function fetchStatistics() {
   loading.value = true
   try {
-    const [startDate, endDate] = dateRange.value || getDefaultRange()
-    const res = await getPlatformStatistics({ startDate, endDate })
+    const res = await getPlatformStatistics()
     stats.value = res.data.data
     await nextTick()
     drawDailyChart()
@@ -224,9 +204,6 @@ function drawDailyChart() {
 }
 
 onMounted(() => {
-  if (!dateRange.value) {
-    dateRange.value = getDefaultRange()
-  }
   fetchStatistics()
 })
 </script>
@@ -250,26 +227,10 @@ onMounted(() => {
   margin: 0;
 }
 
-.filter-card { margin-bottom: 20px; }
-.filter-row {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-.filter-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.filter-item label {
-  white-space: nowrap;
-  color: #606266;
-}
-
 /* 概览卡片 */
 .overview-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
   margin-bottom: 20px;
 }
@@ -300,6 +261,7 @@ onMounted(() => {
 .risk-low { border-left: 4px solid #67c23a; }
 .risk-medium { border-left: 4px solid #e6a23c; }
 .risk-high { border-left: 4px solid #f56c6c; }
+.risk-missing { border-left: 4px solid #909399; }
 
 /* 风险分布 */
 .chart-card {
@@ -308,6 +270,12 @@ onMounted(() => {
 .chart-card h3 {
   margin: 0 0 20px;
   color: #303133;
+}
+.chart-note {
+  margin: -8px 0 16px;
+  font-size: 13px;
+  color: #909399;
+  line-height: 1.6;
 }
 .risk-chart-container {
   max-width: 600px;
@@ -358,5 +326,17 @@ onMounted(() => {
 .daily-canvas {
   width: 100%;
   height: 100%;
+}
+
+@media (max-width: 900px) {
+  .overview-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .overview-cards {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
