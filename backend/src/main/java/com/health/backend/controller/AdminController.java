@@ -1,5 +1,6 @@
 package com.health.backend.controller;
 
+import java.sql.Date;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -137,13 +138,7 @@ public class AdminController {
 
     /** 平台统计 */
     @GetMapping("/statistics")
-    public ApiResponse<Map<String, Object>> statistics(
-        @RequestParam(required = false) LocalDate startDate,
-        @RequestParam(required = false) LocalDate endDate
-    ) {
-        if (startDate == null) startDate = LocalDate.now().minusDays(30);
-        if (endDate == null) endDate = LocalDate.now();
-
+    public ApiResponse<Map<String, Object>> statistics() {
         long totalUsers = userRepository.count();
         long totalHealthData = healthDataRepository.count();
 
@@ -156,7 +151,7 @@ public class AdminController {
 
         Map<String, Long> riskDistribution = Map.of("low", lowRisk, "medium", mediumRisk, "high", highRisk);
 
-        List<Map<String, Object>> dailyDataCount = List.of();
+        List<Map<String, Object>> dailyDataCount = buildDailyDataCount();
 
         return ApiResponse.success(Map.of(
             "totalUsers", totalUsers,
@@ -182,5 +177,36 @@ public class AdminController {
             return "未知";
         }
         return userRepository.findById(userId).map(User::getPhone).orElse("未知");
+    }
+
+    private List<Map<String, Object>> buildDailyDataCount() {
+        LocalDate endDate = LocalDate.now();
+        LocalDate startDate = endDate.minusDays(29);
+        LocalDateTime start = startDate.atStartOfDay();
+        LocalDateTime endExclusive = endDate.plusDays(1).atStartOfDay();
+
+        Map<LocalDate, Long> countsByDate = new HashMap<>();
+        for (Object[] row : healthDataRepository.countDailyRecordsBetween(start, endExclusive)) {
+            countsByDate.put(toLocalDate(row[0]), ((Number) row[1]).longValue());
+        }
+
+        List<Map<String, Object>> dailyDataCount = new ArrayList<>();
+        for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
+            dailyDataCount.add(Map.of(
+                "date", date.toString(),
+                "count", countsByDate.getOrDefault(date, 0L)
+            ));
+        }
+        return dailyDataCount;
+    }
+
+    private LocalDate toLocalDate(Object value) {
+        if (value instanceof LocalDate localDate) {
+            return localDate;
+        }
+        if (value instanceof Date sqlDate) {
+            return sqlDate.toLocalDate();
+        }
+        return LocalDate.parse(String.valueOf(value));
     }
 }

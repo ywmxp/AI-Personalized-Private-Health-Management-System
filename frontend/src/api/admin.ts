@@ -21,9 +21,9 @@ export async function getLoginLogs(_params: { userId?: number; result?: number; 
 }
 
 /** 平台统计 */
-export async function getPlatformStatistics(_params: { startDate?: string; endDate?: string }) {
+export async function getPlatformStatistics() {
   if (isMockEnabled()) return mockSuccess(mockPlatformStatistics)
-  return request.get<ApiResponse<PlatformStatistics>>('/api/admin/statistics', { params: _params })
+  return request.get<ApiResponse<PlatformStatistics>>('/api/admin/statistics')
 }
 
 /** 健康知识管理 - 新增 */

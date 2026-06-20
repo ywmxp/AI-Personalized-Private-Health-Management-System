@@ -2,29 +2,8 @@
   <div class="statistics-page">
     <div class="page-header">
       <h2>📊 健康数据统计</h2>
-      <p class="subtitle">平台数据概览与统计分析</p>
+      <p class="subtitle">平台当前概览与最近30天录入趋势</p>
     </div>
-
-    <!-- 时间筛选 -->
-    <el-card class="filter-card" shadow="never">
-      <div class="filter-row">
-        <div class="filter-item">
-          <label>统计区间：</label>
-          <el-date-picker
-            v-model="dateRange"
-            type="daterange"
-            range-separator="至"
-            start-placeholder="开始日期"
-            end-placeholder="结束日期"
-            format="YYYY-MM-DD"
-            value-format="YYYY-MM-DD"
-          />
-        </div>
-        <el-button type="primary" @click="fetchStatistics" :loading="loading" :icon="Search">
-          查询
-        </el-button>
-      </div>
-    </el-card>
 
     <!-- 概览卡片 -->
     <div class="overview-cards" v-loading="loading">
@@ -118,35 +97,26 @@
     <!-- 每日数据录入量 -->
     <el-card v-if="stats && stats.dailyDataCount?.length" class="chart-card" shadow="never">
       <h3>📅 每日数据录入量</h3>
+      <p class="chart-note">展示最近30天每天新增的健康数据记录数。</p>
       <div class="daily-chart-container">
         <canvas ref="dailyCanvas" class="daily-canvas"></canvas>
       </div>
     </el-card>
 
     <!-- 空状态 -->
-    <EmptyState v-if="!stats && !loading" description="选择时间范围，查询平台统计数据" />
+    <EmptyState v-if="!stats && !loading" description="暂无平台统计数据" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick } from 'vue'
-import { Search } from '@element-plus/icons-vue'
 import { getPlatformStatistics } from '../../api/admin'
 import EmptyState from '../../components/common/EmptyState.vue'
 import type { PlatformStatistics } from '../../types'
 
 const loading = ref(false)
 const stats = ref<PlatformStatistics | null>(null)
-const dateRange = ref<[string, string] | null>(null)
 const dailyCanvas = ref<HTMLCanvasElement | null>(null)
-
-function getDefaultRange(): [string, string] {
-  const end = new Date()
-  const start = new Date()
-  start.setDate(start.getDate() - 30)
-  const fmt = (d: Date) => d.toISOString().split('T')[0]
-  return [fmt(start), fmt(end)]
-}
 
 const maxRiskCount = computed(() => {
   if (!stats.value) return 1
@@ -162,8 +132,7 @@ function barPercent(val: number) {
 async function fetchStatistics() {
   loading.value = true
   try {
-    const [startDate, endDate] = dateRange.value || getDefaultRange()
-    const res = await getPlatformStatistics({ startDate, endDate })
+    const res = await getPlatformStatistics()
     stats.value = res.data.data
     await nextTick()
     drawDailyChart()
@@ -235,9 +204,6 @@ function drawDailyChart() {
 }
 
 onMounted(() => {
-  if (!dateRange.value) {
-    dateRange.value = getDefaultRange()
-  }
   fetchStatistics()
 })
 </script>
@@ -259,22 +225,6 @@ onMounted(() => {
 .subtitle {
   color: #909399;
   margin: 0;
-}
-
-.filter-card { margin-bottom: 20px; }
-.filter-row {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-.filter-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.filter-item label {
-  white-space: nowrap;
-  color: #606266;
 }
 
 /* 概览卡片 */
