@@ -16,11 +16,9 @@ spring:
     open-in-view: false
     database-platform: org.hibernate.dialect.MySQLDialect
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
     properties:
       hibernate:
-        boot:
-          allow_jdbc_metadata_access: false
         format_sql: true
   jackson:
     time-zone: Asia/Shanghai
@@ -37,3 +35,6 @@ management:
 app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://127.0.0.1:5173,http://localhost:5173}
+  jwt:
+    secret: ${JWT_SECRET:dev-only-change-this-secret-key-for-ai-health-management-system}
+    expire-minutes: ${JWT_EXPIRE_MINUTES:120}
