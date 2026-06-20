@@ -88,7 +88,7 @@
             <div class="overview-item">
               <span class="ov-icon">⚖️</span>
               <div>
-                <span class="ov-value">70.5</span>
+                <span class="ov-value">{{ weightText }}</span>
                 <span class="ov-unit"> kg</span>
               </div>
               <span class="ov-label">最新体重</span>
@@ -96,26 +96,26 @@
             <div class="overview-item">
               <span class="ov-icon">😴</span>
               <div>
-                <span class="ov-value">7.5</span>
+                <span class="ov-value">{{ sleepText }}</span>
                 <span class="ov-unit"> 小时</span>
               </div>
-              <span class="ov-label">平均睡眠</span>
+              <span class="ov-label">近7天平均睡眠</span>
             </div>
             <div class="overview-item">
               <span class="ov-icon">🏃</span>
               <div>
-                <span class="ov-value">45</span>
+                <span class="ov-value">{{ exerciseText }}</span>
                 <span class="ov-unit"> 分钟</span>
               </div>
-              <span class="ov-label">平均运动</span>
+              <span class="ov-label">近7天平均运动</span>
             </div>
             <div class="overview-item">
               <span class="ov-icon">📋</span>
               <div>
-                <span class="ov-value">5</span>
+                <span class="ov-value">{{ overview.weeklyRecords }}</span>
                 <span class="ov-unit"> 条</span>
               </div>
-              <span class="ov-label">本周记录</span>
+              <span class="ov-label">近7天记录</span>
             </div>
           </div>
         </el-card>
@@ -138,12 +138,21 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, reactive } from 'vue'
+import { ElMessage } from 'element-plus'
 import { ArrowRight } from '@element-plus/icons-vue'
+import { getHealthRecords } from '../api/health'
 import { useUserStore } from '../stores/user'
+import type { HealthRecord } from '../types'
 
 const userStore = useUserStore()
 const username = computed(() => userStore.userInfo?.username || '用户')
+const overview = reactive({
+  latestWeight: null as number | null,
+  avgSleepHours: null as number | null,
+  avgExerciseMinutes: null as number | null,
+  weeklyRecords: 0,
+})
 
 // ===== 问候语 =====
 const greeting = computed(() => {
@@ -176,11 +185,17 @@ const randomQuote = quotes[new Date().getDate() % quotes.length]
 
 // ===== 健康评分 =====
 const healthScore = computed(() => {
-  // 简单模拟：基于当前分钟数变化
-  const m = new Date().getMinutes()
-  if (m < 20) return 92
-  if (m < 40) return 88
-  return 85
+  let score = 85
+  if (overview.latestWeight != null) score += 3
+  if (overview.avgSleepHours != null) {
+    if (overview.avgSleepHours >= 7 && overview.avgSleepHours <= 9) score += 6
+    else if (overview.avgSleepHours >= 6) score += 3
+  }
+  if (overview.avgExerciseMinutes != null) {
+    if (overview.avgExerciseMinutes >= 30) score += 6
+    else if (overview.avgExerciseMinutes >= 15) score += 3
+  }
+  return Math.min(score, 100)
 })
 
 // ===== 今日小贴士 =====
@@ -193,6 +208,79 @@ const tips = [
   { icon: '🏃', title: '坚持运动', content: '每周至少 150 分钟中等强度运动，让运动成为生活的一部分。' },
 ]
 const currentTip = tips[new Date().getDay() % tips.length]
+
+const weightText = computed(() => formatMetric(overview.latestWeight))
+const sleepText = computed(() => formatMetric(overview.avgSleepHours))
+const exerciseText = computed(() => formatMetric(overview.avgExerciseMinutes))
+
+async function fetchOverview() {
+  try {
+    const res = await getHealthRecords({
+      startTime: getDaysAgoStart(6),
+      endTime: getTodayEnd(),
+      page: 1,
+      size: 200,
+    })
+    applyOverview(res.data.data.items || [])
+  } catch {
+    ElMessage.error('获取首页健康概览失败')
+  }
+}
+
+function applyOverview(records: HealthRecord[]) {
+  overview.weeklyRecords = records.length
+
+  const latestWeightRecord = [...records]
+    .filter((record) => record.dataType === 'WEIGHT')
+    .sort(compareRecordDesc)[0]
+  overview.latestWeight = latestWeightRecord ? Number(latestWeightRecord.dataValue) : null
+
+  overview.avgSleepHours = averageMetric(records, 'SLEEP_HOURS')
+  overview.avgExerciseMinutes = averageMetric(records, 'EXERCISE_MINUTES')
+}
+
+function averageMetric(records: HealthRecord[], dataType: string) {
+  const values = records
+    .filter((record) => record.dataType === dataType)
+    .map((record) => Number(record.dataValue))
+    .filter((value) => Number.isFinite(value))
+  if (values.length === 0) return null
+  return values.reduce((sum, value) => sum + value, 0) / values.length
+}
+
+function compareRecordDesc(a: HealthRecord, b: HealthRecord) {
+  return new Date(b.recordTime).getTime() - new Date(a.recordTime).getTime() || b.dataId - a.dataId
+}
+
+function formatMetric(value: number | null) {
+  if (value == null) return '--'
+  return Number.isInteger(value) ? String(value) : value.toFixed(1)
+}
+
+function getDaysAgoStart(daysAgo: number) {
+  const date = new Date()
+  date.setDate(date.getDate() - daysAgo)
+  date.setHours(0, 0, 0, 0)
+  return formatDateTime(date)
+}
+
+function getTodayEnd() {
+  const date = new Date()
+  date.setHours(23, 59, 59, 0)
+  return formatDateTime(date)
+}
+
+function formatDateTime(date: Date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hour = String(date.getHours()).padStart(2, '0')
+  const minute = String(date.getMinutes()).padStart(2, '0')
+  const second = String(date.getSeconds()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hour}:${minute}:${second}`
+}
+
+onMounted(fetchOverview)
 </script>
 
 <style scoped>
