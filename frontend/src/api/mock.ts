@@ -134,6 +134,7 @@ export const mockPlatformStatistics = {
   totalUsers: 128,
   totalHealthData: 3560,
   riskDistribution: { low: 85, medium: 32, high: 11 },
+  usersWithoutProfile: 0,
   dailyDataCount: [
     { date: '2026-05-01', count: 42 },
     { date: '2026-05-05', count: 55 },

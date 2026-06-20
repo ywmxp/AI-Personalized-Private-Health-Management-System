@@ -3,6 +3,7 @@ export interface PlatformStatistics {
   totalUsers: number
   totalHealthData: number
   riskDistribution: RiskDistribution
+  usersWithoutProfile: number
   dailyDataCount: DailyDataCount[]
 }
 
@@ -34,11 +35,9 @@ export interface AdminUserItem {
 /** 登录日志 */
 export interface LoginLog {
   logId: number
-  userId: number
+  userId: number | null
   phone: string
   loginIp: string
   loginTime: string
   loginResult: number  // 1=成功, 0=失败
-=======
->>>>>>> dev
 }
