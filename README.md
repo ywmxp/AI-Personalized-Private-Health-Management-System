@@ -30,9 +30,9 @@
 
 ## 技术栈
 
-- 前端：Vue 3、TypeScript、Vite、Pinia、Vue Router、Element Plus
-- 主后端：Spring Boot 3.5、Java 21、Spring Security、Spring Data JPA、MySQL
-- AI 服务：FastAPI、Python、AutoGen/OpenAI Compatible API
+- 前端：Vue 3.5.x、TypeScript、Vite 8.x、Pinia、Vue Router 5.x、Element Plus
+- 主后端：Spring Boot 3.5.7、Java 21、Spring Security、Spring Data JPA、MySQL
+- AI 服务：FastAPI 0.115+、Python 3.10+、AutoGen/OpenAI Compatible API
 - 数据库：MySQL 8.4（Docker Compose）
 
 ## 目录结构
@@ -57,10 +57,18 @@
 建议使用以下环境：
 
 - `Docker Desktop`，并确保 `docker compose` 可用
-- `Node.js` 20+
+- `Node.js` 20.19+ 或 22.12+；本项目演示环境推荐使用 Node.js 24.x
 - `npm` 10+
-- `Java` 21
+- `Java` / `JDK` 21
 - `Python` 3.10+
+
+说明：
+
+- 当前已验证环境：Docker 29.5.3、Docker Compose 5.1.4、Node.js 24.16.0、npm 11.13.0、JDK 21。
+- 前端依赖中的 Vite 8 要求 Node.js `^20.19.0 || >=22.12.0`。
+- 后端使用 Maven Wrapper，不要求手动安装 Maven；wrapper 会下载并使用 Maven 3.9.15。
+- AI 服务依赖要求 Python 3.10+，当前演示环境安装 FastAPI 0.138.0。
+- 默认本地端口：前端 `5173`，后端 `8080`，AI 服务 `8000`，MySQL `3306`。
 
 建议先检查：
 
