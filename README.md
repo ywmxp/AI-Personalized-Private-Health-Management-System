@@ -303,13 +303,13 @@ AI 能力：
 - `GET /api/admin/login-logs`
 - `GET /api/admin/statistics`
 
-更详细的字段说明见 [docs/api/后端接口草案.md](/Users/ywmxp/Desktop/AI个性化私人健康管理系统/docs/api/后端接口草案.md)。
+更详细的字段说明见 [docs/api/后端接口草案.md](docs/api/后端接口草案.md)。
 
 ### CSV 导入模板
 
 前端静态目录提供模板：
 
-- [frontend/public/health_data_template.csv](/Users/ywmxp/Desktop/AI个性化私人健康管理系统/frontend/public/health_data_template.csv)
+- [frontend/public/health_data_template.csv](frontend/public/health_data_template.csv)
 
 CSV 表头必须为：
 
@@ -360,19 +360,19 @@ python3 -m venv .venv
 
 需求与设计文档：
 
-- [docs/requirements/需求规格说明书（附图）.md](/Users/ywmxp/Desktop/AI个性化私人健康管理系统/docs/requirements/需求规格说明书（附图）.md)
-- [docs/requirements/软件体系结构设计文档.md](/Users/ywmxp/Desktop/AI个性化私人健康管理系统/docs/requirements/软件体系结构设计文档.md)
-- [docs/database/数据库设计草案.md](/Users/ywmxp/Desktop/AI个性化私人健康管理系统/docs/database/数据库设计草案.md)
+- [docs/requirements/需求规格说明书v2.md](docs/requirements/需求规格说明书v2.md)
+- [docs/requirements/软件体系结构设计文档v2.md](docs/requirements/软件体系结构设计文档v2.md)
+- [docs/database/数据库设计草案.md](docs/database/数据库设计草案.md)
 
 后端与 AI 说明：
 
-- [docs/api/后端接口草案.md](/Users/ywmxp/Desktop/AI个性化私人健康管理系统/docs/api/后端接口草案.md)
-- [docs/backend/登录注册后端实现说明.md](/Users/ywmxp/Desktop/AI个性化私人健康管理系统/docs/backend/登录注册后端实现说明.md)
-- [docs/backend/健康数据导入后端实现说明.md](/Users/ywmxp/Desktop/AI个性化私人健康管理系统/docs/backend/健康数据导入后端实现说明.md)
-- [docs/backend/人工智能模块.md](/Users/ywmxp/Desktop/AI个性化私人健康管理系统/docs/backend/人工智能模块.md)
+- [docs/api/后端接口草案.md](docs/api/后端接口草案.md)
+- [docs/backend/登录注册后端实现说明.md](docs/backend/登录注册后端实现说明.md)
+- [docs/backend/健康数据导入后端实现说明.md](docs/backend/健康数据导入后端实现说明.md)
+- [docs/backend/人工智能模块.md](docs/backend/人工智能模块.md)
 
 前端说明：
 
-- [frontend/README.md](/Users/ywmxp/Desktop/AI个性化私人健康管理系统/frontend/README.md)
-- [docs/frontend/个人信息管理前端实现说明.md](/Users/ywmxp/Desktop/AI个性化私人健康管理系统/docs/frontend/个人信息管理前端实现说明.md)
-- [docs/frontend/健康数据管理前端实现说明.md](/Users/ywmxp/Desktop/AI个性化私人健康管理系统/docs/frontend/健康数据管理前端实现说明.md)
+- [frontend/README.md](frontend/README.md)
+- [docs/frontend/个人信息管理前端实现说明.md](docs/frontend/个人信息管理前端实现说明.md)
+- [docs/frontend/健康数据管理前端实现说明.md](docs/frontend/健康数据管理前端实现说明.md)
